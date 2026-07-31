@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>製作班級學生資料清單</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1a2a2e;
+      --muted: #5c6f74;
+      --line: rgba(26, 42, 46, 0.12);
+      --paper: #f3f6f4;
+      --panel: rgba(255, 255, 255, 0.78);
+      --accent: #0f766e;
+      --accent-soft: #d7f0eb;
+      --trad: #0f766e;
+      --simp: #b45309;
+      --other: #475569;
+      --shadow: 0 18px 40px rgba(26, 42, 46, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #d9efe8 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #f4e7d4 0%, transparent 50%),
+        linear-gradient(180deg, #eef4f1 0%, var(--paper) 45%, #e8efeb 100%);
+    }
+
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    header.hero {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 22px;
+      animation: rise 0.55s ease both;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Noto Serif TC", serif;
+      font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    .source-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .source-bar .source-input {
+      flex: 1 1 320px;
+      min-width: 220px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      font: inherit;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .source-bar .source-input:focus {
+      border-color: rgba(15, 118, 110, 0.45);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .mode-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .mode-bar .btn.mode-active {
+      background: var(--accent);
+      border-color: transparent;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .mode-bar .btn.mode-active:hover {
+      background: #0d665f;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .search {
+      flex: 1 1 240px;
+      min-width: 200px;
+      padding: 11px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.85);
+      font: inherit;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: rgba(15, 118, 110, 0.45);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 11px 16px;
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); background: #f8faf9; }
+    .btn:active { transform: translateY(0); }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .btn.primary:hover { background: #0d665f; }
+
+    .btn.active {
+      background: var(--accent-soft);
+      border-color: rgba(15, 118, 110, 0.35);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .sort-bar,
+    .display-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .sort-bar .label,
+    .display-bar .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .meta strong { color: var(--ink); font-weight: 700; }
+
+    .status {
+      min-height: 1.3em;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .status.error { color: #b91c1c; }
+
+    .dup-note {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #9a3412;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      display: none;
+    }
+
+    .dup-note.show { display: block; }
+
+    .dup-note strong { color: #7c2d12; }
+
+    .dup-note ul {
+      margin: 6px 0 0;
+      padding-left: 1.2em;
+    }
+
+    .dup-note li { margin: 2px 0; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 18px;
+      animation: rise 0.65s ease both;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.trad { background: var(--trad); }
+    .dot.simp { background: var(--simp); }
+    .dot.other { background: var(--other); }
+
+    .name-sample {
+      color: #dc2626;
+      font-weight: 700;
+    }
+
+    .groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+
+    .group {
+      --tone: var(--other);
+      background: var(--panel);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      animation: rise 0.55s ease both;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .group:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 48px rgba(26, 42, 46, 0.12);
+    }
+
+    .group.trad { --tone: var(--trad); }
+    .group.simp { --tone: var(--simp); }
+    .group.other { --tone: var(--other); }
+
+    .group-head {
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--tone) 16%, transparent), transparent 70%),
+        rgba(255, 255, 255, 0.55);
+    }
+
+    .group-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--tone);
+      text-transform: none;
+      margin-bottom: 6px;
+    }
+
+    .group-title {
+      margin: 0;
+      font-family: "Noto Serif TC", serif;
+      font-size: 1.18rem;
+      line-height: 1.35;
+    }
+
+    .group-count {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--tone) 12%, #fff);
+      color: var(--tone);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .students {
+      list-style: none;
+      margin: 0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .student {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto;
+      align-content: start;
+      gap: 2px 10px;
+      padding: 8px 10px;
+      min-height: 52px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid transparent;
+      line-height: 1.25;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .student:hover {
+      border-color: color-mix(in srgb, var(--tone) 35%, transparent);
+      background: #fff;
+    }
+
+    .names {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px 8px;
+      align-items: baseline;
+      min-height: 1.25em;
+    }
+
+    .name-zh {
+      font-weight: 700;
+      font-size: 0.98rem;
+      line-height: 1.25;
+    }
+
+    .name-en {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.25;
+    }
+
+    .student.is-new .name-zh,
+    .student.is-new .name-en {
+      color: #dc2626;
+    }
+
+    .facts {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.25;
+      min-height: 1.4em;
+    }
+
+    .fact {
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: #f1f5f4;
+      white-space: nowrap;
+    }
+
+    .extra-fields {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 3px;
+      margin-top: 2px;
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: var(--ink);
+    }
+
+    .extra-row {
+      display: grid;
+      grid-template-columns: 5.5em minmax(0, 1fr);
+      gap: 6px;
+      align-items: start;
+    }
+
+    .extra-label {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .extra-value {
+      word-break: break-word;
+    }
+
+    .extra-value.empty {
+      color: #9ca3af;
+    }
+
+    .extra-value.allergy-alert {
+      color: #b91c1c;
+      font-weight: 600;
+    }
+
+    .empty {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.5);
+    }
+
+    .print-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: #e8efeb;
+      overflow: auto;
+    }
+
+    .print-overlay.open { display: block; }
+
+    .print-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.95);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .print-toolbar .hint {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-right: auto;
+    }
+
+    .print-sheet {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .print-page {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .print-page-head {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #1a2a2e;
+    }
+
+    .print-page-title {
+      margin: 0;
+      font-family: "Noto Serif TC", serif;
+      font-size: 1.25rem;
+    }
+
+    .print-page-meta {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .print-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .print-cell {
+      border: 1px solid #cbd5d1;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 88px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .print-cell .name-zh {
+      font-size: 1rem;
+    }
+
+    .print-cell .name-en {
+      font-size: 0.84rem;
+    }
+
+    .print-cell.is-new .name-zh,
+    .print-cell.is-new .name-en {
+      color: #dc2626;
+    }
+
+    .print-cell .extra-fields {
+      margin-top: 6px;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 18px 14px 48px; }
+      .groups { grid-template-columns: 1fr; }
+      .print-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+      }
+
+      .wrap,
+      .print-toolbar {
+        display: none !important;
+      }
+
+      .print-overlay {
+        display: block !important;
+        position: static;
+        background: #fff;
+        overflow: visible;
+      }
+
+      .print-sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .print-page {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .print-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .print-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .print-cell {
+        border: 1px solid #333;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>製作班級學生資料清單</h1>
+      <div class="source-bar">
+        <input class="source-input" id="sheetUrlInput" type="url" placeholder="貼上 Google 試算表網址（建議含 gid=）" autocomplete="off" spellcheck="false">
+        <button class="btn primary" id="loadSheetBtn" type="button">載入試算表</button>
+      </div>
+      <div class="mode-bar">
+        <button class="btn mode-active" id="modeChineseBtn" type="button" data-mode="chinese">中文班</button>
+        <button class="btn" id="modeEnglishBtn" type="button" data-mode="english">英文班</button>
+        <button class="btn" id="modeMathBtn" type="button" data-mode="math">數學班</button>
+      </div>
+      <div class="toolbar">
+        <input class="search" id="searchInput" type="search" placeholder="搜尋姓名、班級、年級…" autocomplete="off">
+      </div>
+      <div class="sort-bar">
+        <span class="label">群組內排序：</span>
+        <button class="btn active" id="sortEnBtn" type="button" data-sort="en">英文名</button>
+        <button class="btn" id="sortDobBtn" type="button" data-sort="dob">生日</button>
+      </div>
+      <div class="display-bar">
+        <span class="label">顯示資料：</span>
+        <button class="btn" id="showAllergyBtn" type="button" data-field="allergy">過敏</button>
+        <button class="btn" id="showParent1Btn" type="button" data-field="parent1">家長1+聯絡電話</button>
+        <button class="btn" id="showParent2Btn" type="button" data-field="parent2">家長2+聯絡電話</button>
+        <button class="btn" id="showEmergencyBtn" type="button" data-field="emergency">緊急聯絡人+聯絡電話</button>
+        <button class="btn primary" id="printPreviewBtn" type="button">預覽列印</button>
+      </div>
+      <div class="meta" id="metaBar"></div>
+      <div class="status" id="status">請貼上試算表網址後按「載入試算表」</div>
+      <div class="dup-note" id="dupNote"></div>
+    </header>
+
+    <div class="legend">
+      <span class="chip legend-chinese"><span class="dot trad"></span>繁體字組</span>
+      <span class="chip legend-chinese"><span class="dot simp"></span>簡體字組</span>
+      <span class="chip legend-chinese"><span class="dot other"></span>其他／未定</span>
+      <span class="chip"><span class="name-sample">紅名字</span>紅色字為新生</span>
+    </div>
+
+    <div class="groups" id="groups"></div>
+  </div>
+
+  <div class="print-overlay" id="printOverlay" aria-hidden="true">
+    <div class="print-toolbar">
+      <span class="hint" id="printHint">預覽列印：每群組一頁，一格一位學生</span>
+      <button class="btn primary" id="doPrintBtn" type="button">列印</button>
+      <button class="btn" id="closePrintBtn" type="button">關閉預覽</button>
+    </div>
+    <div class="print-sheet" id="printSheet"></div>
+  </div>
+
+  <script>
+    // C D E G J K M O Q T U V W AA AB AC AD
+    const COL = {
+      en: 2, zh: 3, dob: 4, grade: 6, enrolled: 9,
+      parent1: 10, parent1Phone: 12,
+      parent2: 14, parent2Phone: 16,
+      emergency: 19, emergencyRel: 20, emergencyPhone: 21,
+      allergy: 22,
+      chineseClass: 26, script: 27, englishClass: 28, mathClass: 29,
+    };
+
+    const groupsEl = document.getElementById("groups");
+    const statusEl = document.getElementById("status");
+    const dupNoteEl = document.getElementById("dupNote");
+    const metaBar = document.getElementById("metaBar");
+    const searchInput = document.getElementById("searchInput");
+    const sheetUrlInput = document.getElementById("sheetUrlInput");
+    const loadSheetBtn = document.getElementById("loadSheetBtn");
+    const sortEnBtn = document.getElementById("sortEnBtn");
+    const sortDobBtn = document.getElementById("sortDobBtn");
+    const showFieldBtns = {
+      allergy: document.getElementById("showAllergyBtn"),
+      parent1: document.getElementById("showParent1Btn"),
+      parent2: document.getElementById("showParent2Btn"),
+      emergency: document.getElementById("showEmergencyBtn"),
+    };
+    const printPreviewBtn = document.getElementById("printPreviewBtn");
+    const printOverlay = document.getElementById("printOverlay");
+    const printSheet = document.getElementById("printSheet");
+    const printHint = document.getElementById("printHint");
+    const doPrintBtn = document.getElementById("doPrintBtn");
+    const closePrintBtn = document.getElementById("closePrintBtn");
+    const modeChineseBtn = document.getElementById("modeChineseBtn");
+    const modeEnglishBtn = document.getElementById("modeEnglishBtn");
+    const modeMathBtn = document.getElementById("modeMathBtn");
+
+    const FIELD_LABELS = {
+      allergy: "過敏",
+      parent1: "家長1+聯絡電話",
+      parent2: "家長2+聯絡電話",
+      emergency: "緊急聯絡人+聯絡電話",
+    };
+
+    const MODE_META = {
+      chinese: { label: "中文班", empty: "未填中文班" },
+      english: { label: "英文班", empty: "未填英文班" },
+      math: { label: "數學班", empty: "未填數學班" },
+    };
+
+    let allStudents = [];
+    let loadStats = { raw: 0, kept: 0, duplicates: [] };
+    let classMode = "chinese"; // chinese | english | math
+    let sortMode = "en"; // en | dob
+    let currentSheetId = "";
+    let currentGid = "0";
+    let showFields = {
+      allergy: false,
+      parent1: false,
+      parent2: false,
+      emergency: false,
+    };
+
+    function baseUrl() {
+      if (location.protocol === "file:") return "http://127.0.0.1:5002";
+      return location.origin;
+    }
+
+    function useLocalSheetProxy() {
+      const protocol = location.protocol;
+      const h = location.hostname;
+      if (protocol === "file:" || !h) return true;
+      if (h === "localhost" || h === "127.0.0.1") return true;
+      if (/^192\.168\.\d+\.\d+$/.test(h) || /^10\./.test(h)) return true;
+      return false;
+    }
+
+    function looksLikeCsv(text) {
+      const t = (text || "").trim();
+      return t.length > 0 && !t.startsWith("<") && !t.startsWith("{");
+    }
+
+    function sheetFetchCandidates(sheetId, gid) {
+      const googleUrl =
+        "https://docs.google.com/spreadsheets/d/" +
+        encodeURIComponent(sheetId) +
+        "/export?format=csv&gid=" +
+        encodeURIComponent(gid);
+      const list = [];
+      if (useLocalSheetProxy()) {
+        list.push({
+          url:
+            `${baseUrl()}/api/sheet_csv?sheet_id=${encodeURIComponent(sheetId)}` +
+            `&gid=${encodeURIComponent(gid)}&t=${Date.now()}`,
+          mode: "raw",
+        });
+      }
+      list.push(
+        { url: googleUrl + "&t=" + Date.now(), mode: "raw" },
+        { url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(googleUrl), mode: "raw" },
+        { url: "https://corsproxy.io/?url=" + encodeURIComponent(googleUrl), mode: "raw" }
+      );
+      return list;
+    }
+
+    async function fetchSheetCsvText(sheetId, gid) {
+      const candidates = sheetFetchCandidates(sheetId, gid);
+      let lastErr = null;
+      for (const c of candidates) {
+        try {
+          const resp = await fetch(c.url, { cache: "no-store" });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          const text = await resp.text();
+          if (!looksLikeCsv(text)) throw new Error("不是有效 CSV（試算表可能未公開）");
+          return text;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr || new Error("無法取得試算表");
+    }
+
+    function parseSheetSource(raw) {
+      const text = (raw || "").trim();
+      if (!text) return null;
+      const idMatch = text.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/i);
+      if (idMatch) {
+        const gidMatch = text.match(/[?&#]gid=(\d+)/i);
+        return {
+          sheetId: idMatch[1],
+          gid: gidMatch ? gidMatch[1] : "0",
+        };
+      }
+      // allow sheet_id or sheet_id,gid
+      const parts = text.split(",").map((p) => p.trim()).filter(Boolean);
+      if (parts.length === 1 && /^[a-zA-Z0-9-_]+$/.test(parts[0])) {
+        return { sheetId: parts[0], gid: "0" };
+      }
+      if (parts.length >= 2 && /^[a-zA-Z0-9-_]+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
+        return { sheetId: parts[0], gid: parts[1] };
+      }
+      return null;
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        const next = text[i + 1];
+        if (inQuotes) {
+          if (ch === '"' && next === '"') {
+            cell += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            cell += ch;
+          }
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ",") {
+          row.push(cell);
+          cell = "";
+        } else if (ch === "\n") {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = "";
+        } else if (ch === "\r") {
+          // skip
+        } else {
+          cell += ch;
+        }
+      }
+      if (cell.length || row.length) {
+        row.push(cell);
+        rows.push(row);
+      }
+      return rows;
+    }
+
+    function cell(row, idx) {
+      return ((row[idx] || "") + "").replace(/\s+/g, " ").trim();
+    }
+
+    function scriptKind(script) {
+      if (/簡體|Simplified/i.test(script)) return "simp";
+      if (/繁體|Traditional/i.test(script)) return "trad";
+      return "other";
+    }
+
+    function scriptLabel(script, kind) {
+      if (kind === "simp") return "簡體字";
+      if (kind === "trad") return "繁體字";
+      return script || "未填字體偏好";
+    }
+
+    function classSortKey(name) {
+      let m = name.match(/Chinese\s*(\d+)/i);
+      if (m) return [0, Number(m[1]), name];
+      if (/CSL/i.test(name)) return [1, 0, name];
+      m = name.match(/Phonics\s*(\d+)/i);
+      if (m) return [2, Number(m[1]), name];
+      m = name.match(/Language Arts\s*(\d+)/i);
+      if (m) return [3, Number(m[1]), name];
+      m = name.match(/Dimensions Math\s*(\d+)/i);
+      if (m) return [4, Number(m[1]), name];
+      if (/Math Kangaroo Foundations/i.test(name)) return [5, 0, name];
+      if (/Math Kangaroo Advanced/i.test(name)) return [5, 1, name];
+      if (/Intermediate Math/i.test(name)) return [5, 2, name];
+      if (/Not Enrolling|不報名/i.test(name)) return [7, 0, name];
+      if (/Not Sure|尚未確定/i.test(name)) return [8, 0, name];
+      if (/未填/.test(name)) return [9, 0, name];
+      return [6, 0, name];
+    }
+
+    function updateModeButtons() {
+      modeChineseBtn.classList.toggle("mode-active", classMode === "chinese");
+      modeEnglishBtn.classList.toggle("mode-active", classMode === "english");
+      modeMathBtn.classList.toggle("mode-active", classMode === "math");
+      document.querySelectorAll(".legend-chinese").forEach((el) => {
+        el.style.display = classMode === "chinese" ? "" : "none";
+      });
+    }
+
+    function groupInfoForStudent(s) {
+      if (classMode === "english") {
+        return {
+          key: "en||" + s.englishClass,
+          title: s.englishClass,
+          kicker: "英文班",
+          kind: "other",
+        };
+      }
+      if (classMode === "math") {
+        return {
+          key: "math||" + s.mathClass,
+          title: s.mathClass,
+          kicker: "數學班",
+          kind: "other",
+        };
+      }
+      return {
+        key: "zh||" + s.chineseClass + "||" + s.script,
+        title: s.chineseClass,
+        kicker: scriptLabel(s.script, s.kind),
+        kind: s.kind,
+      };
+    }
+
+    function studentKey(s) {
+      // Same English + Chinese name = same person (DOB may be mistyped across resubmits).
+      const en = (s.en || "").toLowerCase();
+      const zh = s.zh || "";
+      if (!en && !zh) return "";
+      if (en && zh) return en + "|" + zh;
+      return en ? "en|" + en : "zh|" + zh;
+    }
+
+    function displayName(s) {
+      if (s.zh && s.en) return s.zh + "（" + s.en + "）";
+      return s.zh || s.en || "（無名）";
+    }
+
+    function scoreStudent(s) {
+      // Prefer later rows and more complete class placement.
+      let score = s.rowIndex;
+      if (s.chineseClass && s.chineseClass !== MODE_META.chinese.empty) score += 10000;
+      if (s.englishClass && s.englishClass !== MODE_META.english.empty) score += 3000;
+      if (s.mathClass && s.mathClass !== MODE_META.math.empty) score += 3000;
+      if (s.zh) score += 100;
+      if (s.en) score += 50;
+      if (s.grade) score += 20;
+      if (s.dob) score += 10;
+      return score;
+    }
+
+    function buildStudents(rows) {
+      const raw = [];
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        const en = cell(r, COL.en);
+        const zh = cell(r, COL.zh);
+        const dob = cell(r, COL.dob);
+        const grade = cell(r, COL.grade);
+        const enrolled = cell(r, COL.enrolled);
+        const chineseClass = cell(r, COL.chineseClass) || MODE_META.chinese.empty;
+        const script = cell(r, COL.script) || "未填字體偏好";
+        const englishClass = cell(r, COL.englishClass) || MODE_META.english.empty;
+        const mathClass = cell(r, COL.mathClass) || MODE_META.math.empty;
+        if (!en && !zh && !dob && !grade) continue;
+        raw.push({
+          en,
+          zh,
+          dob,
+          grade,
+          enrolled,
+          isNew: /^No\b/i.test(enrolled),
+          allergy: cell(r, COL.allergy),
+          parent1: cell(r, COL.parent1),
+          parent1Phone: cell(r, COL.parent1Phone),
+          parent2: cell(r, COL.parent2),
+          parent2Phone: cell(r, COL.parent2Phone),
+          emergency: cell(r, COL.emergency),
+          emergencyRel: cell(r, COL.emergencyRel),
+          emergencyPhone: cell(r, COL.emergencyPhone),
+          chineseClass,
+          script,
+          englishClass,
+          mathClass,
+          kind: scriptKind(script),
+          rowIndex: i + 1,
+        });
+      }
+
+      const bestByKey = new Map();
+      const dupsByKey = new Map();
+      for (const s of raw) {
+        const key = studentKey(s);
+        if (!key) {
+          bestByKey.set("__anon_" + s.rowIndex, s);
+          continue;
+        }
+        const prev = bestByKey.get(key);
+        if (!prev) {
+          bestByKey.set(key, s);
+          continue;
+        }
+        if (!dupsByKey.has(key)) dupsByKey.set(key, []);
+        const winner = scoreStudent(s) >= scoreStudent(prev) ? s : prev;
+        const loser = winner === s ? prev : s;
+        dupsByKey.get(key).push(loser);
+        bestByKey.set(key, winner);
+      }
+
+      const kept = [...bestByKey.values()];
+      const duplicates = [...dupsByKey.entries()].map(([key, dropped]) => {
+        const keptOne = bestByKey.get(key);
+        return {
+          name: displayName(keptOne),
+          keptRow: keptOne.rowIndex,
+          droppedRows: dropped.map((d) => d.rowIndex).sort((a, b) => a - b),
+          count: dropped.length + 1,
+        };
+      }).sort((a, b) => a.name.localeCompare(b.name, "zh-Hant"));
+
+      loadStats = { raw: raw.length, kept: kept.length, duplicates };
+      return kept;
+    }
+
+    function renderDupNote() {
+      const dups = loadStats.duplicates || [];
+      if (!dups.length) {
+        dupNoteEl.classList.remove("show");
+        dupNoteEl.innerHTML = "";
+        return;
+      }
+      const removed = loadStats.raw - loadStats.kept;
+      const items = dups.map((d) =>
+        `<li><strong>${escapeHtml(d.name)}</strong>：共 ${d.count} 筆，保留第 ${d.keptRow} 列，略過第 ${d.droppedRows.join("、")} 列</li>`
+      ).join("");
+      dupNoteEl.innerHTML =
+        `已合併重複報名 <strong>${dups.length}</strong> 人（略過 ${removed} 筆），僅保留一筆：` +
+        `<ul>${items}</ul>`;
+      dupNoteEl.classList.add("show");
+    }
+
+    function groupStudents(students) {
+      const map = new Map();
+      for (const s of students) {
+        const info = groupInfoForStudent(s);
+        if (!map.has(info.key)) {
+          map.set(info.key, {
+            title: info.title,
+            kicker: info.kicker,
+            kind: info.kind,
+            students: [],
+          });
+        }
+        map.get(info.key).students.push(s);
+      }
+      const groups = [...map.values()];
+      groups.sort((a, b) => {
+        const ka = classSortKey(a.title);
+        const kb = classSortKey(b.title);
+        for (let i = 0; i < 3; i++) {
+          if (ka[i] < kb[i]) return -1;
+          if (ka[i] > kb[i]) return 1;
+        }
+        const order = { trad: 0, simp: 1, other: 2 };
+        return (order[a.kind] - order[b.kind]) || a.kicker.localeCompare(b.kicker, "zh-Hant");
+      });
+      for (const g of groups) {
+        g.students.sort(compareStudents);
+      }
+      return groups;
+    }
+
+    function parseDob(value) {
+      const t = (value || "").trim();
+      if (!t) return null;
+      // m/d/yyyy or yyyy-mm-dd
+      let m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) return new Date(Number(m[3]), Number(m[1]) - 1, Number(m[2]));
+      m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      const d = new Date(t);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function compareStudents(a, b) {
+      if (sortMode === "dob") {
+        const da = parseDob(a.dob);
+        const db = parseDob(b.dob);
+        if (da && db) {
+          const diff = da - db;
+          if (diff !== 0) return diff;
+        } else if (da && !db) return -1;
+        else if (!da && db) return 1;
+      }
+      const en = (a.en || "").localeCompare(b.en || "", "en", { sensitivity: "base" });
+      if (en !== 0) return en;
+      return (a.zh || "").localeCompare(b.zh || "", "zh-Hant");
+    }
+
+    function updateSortButtons() {
+      sortEnBtn.classList.toggle("active", sortMode === "en");
+      sortDobBtn.classList.toggle("active", sortMode === "dob");
+    }
+
+    function updateShowFieldButtons() {
+      Object.keys(showFieldBtns).forEach((key) => {
+        showFieldBtns[key].classList.toggle("active", !!showFields[key]);
+      });
+    }
+
+    function isEmptyValue(value) {
+      const t = (value || "").trim();
+      if (!t) return true;
+      return /^(n\/?a|none|nil|null|無|没有|沒有)$/i.test(t);
+    }
+
+    function cleanPart(value) {
+      const t = (value || "").trim();
+      return isEmptyValue(t) ? "" : t;
+    }
+
+    function joinContact(name, phone, rel) {
+      const parts = [];
+      const n = cleanPart(name);
+      const r = cleanPart(rel);
+      const p = cleanPart(phone);
+      if (n) parts.push(n);
+      if (r) parts.push("（" + r + "）");
+      if (p) parts.push(p);
+      return parts.join(" ").trim();
+    }
+
+    function selectedShowKeys() {
+      return Object.keys(showFields).filter((k) => showFields[k]);
+    }
+
+    function getSelectedFieldRows(s) {
+      const rows = [];
+      if (showFields.allergy) {
+        const value = cleanPart(s.allergy);
+        if (value) rows.push({ label: "過敏", value, alert: true });
+      }
+      if (showFields.parent1) {
+        const value = joinContact(s.parent1, s.parent1Phone);
+        if (value) rows.push({ label: "家長1", value });
+      }
+      if (showFields.parent2) {
+        const value = joinContact(s.parent2, s.parent2Phone);
+        if (value) rows.push({ label: "家長2", value });
+      }
+      if (showFields.emergency) {
+        const value = joinContact(s.emergency, s.emergencyPhone, s.emergencyRel);
+        if (value) rows.push({ label: "緊急聯絡", value });
+      }
+      return rows;
+    }
+
+    function renderExtraFields(s) {
+      const rows = getSelectedFieldRows(s);
+      if (!rows.length) return "";
+      return `<div class="extra-fields">${rows.map((row) => `
+        <div class="extra-row">
+          <span class="extra-label">${escapeHtml(row.label)}</span>
+          <span class="extra-value${row.alert ? " allergy-alert" : ""}">${escapeHtml(row.value)}</span>
+        </div>
+      `).join("")}</div>`;
+    }
+
+    function currentGroups() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = allStudents.filter((s) => matchesQuery(s, q));
+      return { filtered, groups: groupStudents(filtered) };
+    }
+
+    function buildPrintPagesHtml(groups) {
+      return groups.map((g) => {
+        const cells = g.students.map((s) => {
+          const rows = getSelectedFieldRows(s);
+          const fieldsHtml = rows.length
+            ? `<div class="extra-fields">${rows.map((row) => `
+                <div class="extra-row">
+                  <span class="extra-label">${escapeHtml(row.label)}</span>
+                  <span class="extra-value${row.alert ? " allergy-alert" : ""}">${escapeHtml(row.value)}</span>
+                </div>
+              `).join("")}</div>`
+            : "";
+          return `
+            <div class="print-cell${s.isNew ? " is-new" : ""}">
+              <div class="names">
+                <span class="name-zh">${escapeHtml(s.zh || "（無中文名）")}</span>
+                <span class="name-en">${escapeHtml(s.en || "（無英文名）")}</span>
+              </div>
+              ${fieldsHtml}
+            </div>
+          `;
+        }).join("");
+
+        return `
+          <section class="print-page">
+            <div class="print-page-head">
+              <h2 class="print-page-title">${escapeHtml(g.kicker)}｜${escapeHtml(g.title)}</h2>
+              <div class="print-page-meta">${g.students.length} 人</div>
+            </div>
+            <div class="print-grid">${cells}</div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function openPrintPreview() {
+      const keys = selectedShowKeys();
+      if (!keys.length) {
+        alert("請先在「顯示資料」勾選至少一個欄位，再預覽列印。");
+        return;
+      }
+      const { groups } = currentGroups();
+      if (!groups.length) {
+        alert("目前沒有可列印的群組資料。");
+        return;
+      }
+      const fieldText = keys.map((k) => FIELD_LABELS[k]).join("、");
+      printHint.textContent = `每群組一頁｜一格一位學生｜僅印：${fieldText}`;
+      printSheet.innerHTML = buildPrintPagesHtml(groups);
+      printOverlay.classList.add("open");
+      printOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closePrintPreview() {
+      printOverlay.classList.remove("open");
+      printOverlay.setAttribute("aria-hidden", "true");
+      printSheet.innerHTML = "";
+    }
+
+    function matchesQuery(student, q) {
+      if (!q) return true;
+      const hay = [
+        student.en, student.zh, student.dob, student.grade,
+        student.chineseClass, student.script, student.englishClass, student.mathClass,
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function render() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = allStudents.filter((s) => matchesQuery(s, q));
+      const groups = groupStudents(filtered);
+
+      metaBar.innerHTML =
+        `<span>模式 <strong>${MODE_META[classMode].label}</strong></span>` +
+        `<span>學生 <strong>${filtered.length}</strong>${q ? ` / ${allStudents.length}` : ""}</span>` +
+        `<span>群組 <strong>${groups.length}</strong></span>` +
+        `<span>更新時間 <strong>${new Date().toLocaleString("zh-TW")}</strong></span>`;
+
+      if (!groups.length) {
+        groupsEl.innerHTML = `<div class="empty">${allStudents.length ? "沒有符合搜尋的結果" : "目前沒有資料"}</div>`;
+        return;
+      }
+
+      groupsEl.innerHTML = groups.map((g, idx) => {
+        const studentsHtml = g.students.map((s) => `
+          <li class="student${s.isNew ? " is-new" : ""}">
+            <div class="names">
+              <span class="name-zh">${escapeHtml(s.zh || "（無中文名）")}</span>
+              <span class="name-en">${escapeHtml(s.en || "（無英文名）")}</span>
+            </div>
+            <div class="facts">
+              <span class="fact">年級 ${escapeHtml(s.grade || "未填")}</span>
+              <span class="fact">生日 ${escapeHtml(s.dob || "未填")}</span>
+            </div>
+            ${renderExtraFields(s)}
+          </li>
+        `).join("");
+
+        return `
+          <section class="group ${g.kind}" style="animation-delay:${Math.min(idx, 12) * 0.03}s">
+            <div class="group-head">
+              <div class="group-kicker"><span class="dot ${g.kind}"></span>${escapeHtml(g.kicker)}</div>
+              <h2 class="group-title">${escapeHtml(g.title)}</h2>
+              <div class="group-count">${g.students.length} 人</div>
+            </div>
+            <ul class="students">${studentsHtml}</ul>
+          </section>
+        `;
+      }).join("");
+    }
+
+    async function loadData() {
+      const source = parseSheetSource(sheetUrlInput.value);
+      if (!source) {
+        statusEl.classList.add("error");
+        statusEl.textContent = "請貼上有效的 Google 試算表網址（需含 /spreadsheets/d/…）。";
+        return;
+      }
+      currentSheetId = source.sheetId;
+      currentGid = source.gid;
+
+      statusEl.classList.remove("error");
+      statusEl.textContent = "正在從試算表載入…";
+      loadSheetBtn.disabled = true;
+      try {
+        const text = await fetchSheetCsvText(currentSheetId, currentGid);
+        const rows = parseCsv(text);
+        allStudents = buildStudents(rows);
+        statusEl.textContent = `已載入 ${allStudents.length} 筆報名資料`;
+        renderDupNote();
+        render();
+      } catch (err) {
+        console.error(err);
+        statusEl.classList.add("error");
+        statusEl.textContent =
+          "載入失敗：請確認試算表已設為「知道連結的任何人可檢視」。本機可執行 python3 server.py。";
+        dupNoteEl.classList.remove("show");
+        dupNoteEl.innerHTML = "";
+        groupsEl.innerHTML = `<div class="empty">無法載入試算表資料</div>`;
+      } finally {
+        loadSheetBtn.disabled = false;
+      }
+    }
+
+    searchInput.addEventListener("input", render);
+    loadSheetBtn.addEventListener("click", loadData);
+    sheetUrlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        loadData();
+      }
+    });
+    sortEnBtn.addEventListener("click", () => {
+      sortMode = "en";
+      updateSortButtons();
+      render();
+    });
+    sortDobBtn.addEventListener("click", () => {
+      sortMode = "dob";
+      updateSortButtons();
+      render();
+    });
+    Object.keys(showFieldBtns).forEach((key) => {
+      showFieldBtns[key].addEventListener("click", () => {
+        showFields[key] = !showFields[key];
+        updateShowFieldButtons();
+        render();
+      });
+    });
+    printPreviewBtn.addEventListener("click", openPrintPreview);
+    doPrintBtn.addEventListener("click", () => window.print());
+    closePrintBtn.addEventListener("click", closePrintPreview);
+    function setClassMode(mode) {
+      classMode = mode;
+      updateModeButtons();
+      render();
+    }
+    modeChineseBtn.addEventListener("click", () => setClassMode("chinese"));
+    modeEnglishBtn.addEventListener("click", () => setClassMode("english"));
+    modeMathBtn.addEventListener("click", () => setClassMode("math"));
+    updateModeButtons();
+    updateSortButtons();
+    updateShowFieldButtons();
+    groupsEl.innerHTML = `<div class="empty">請貼上試算表網址後按「載入試算表」</div>`;
+  </script>
+</body>
+</html>
