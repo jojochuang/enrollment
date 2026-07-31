@@ -48,12 +48,45 @@
       animation: rise 0.55s ease both;
     }
 
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
     h1 {
       margin: 0;
       font-family: "Noto Serif TC", serif;
       font-size: clamp(1.8rem, 3.2vw, 2.5rem);
       letter-spacing: 0.02em;
       line-height: 1.2;
+      flex: 1 1 auto;
+    }
+
+    .lang-switch {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.9);
+      flex: 0 0 auto;
+    }
+
+    .lang-switch .btn {
+      border: none;
+      border-radius: 0;
+      padding: 8px 14px;
+      box-shadow: none;
+    }
+
+    .lang-switch .btn:hover { transform: none; }
+
+    .lang-switch .btn.lang-active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
     }
 
     .source-bar {
@@ -81,7 +114,8 @@
       box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
     }
 
-    .mode-bar {
+    .mode-bar,
+    .grade-bar {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -89,14 +123,29 @@
       margin-top: 4px;
     }
 
-    .mode-bar .btn.mode-active {
+    .grade-bar {
+      display: none;
+    }
+
+    .grade-bar.show {
+      display: flex;
+    }
+
+    .grade-bar .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mode-bar .btn.mode-active,
+    .grade-bar .btn.grade-active {
       background: var(--accent);
       border-color: transparent;
       color: #fff;
       font-weight: 700;
     }
 
-    .mode-bar .btn.mode-active:hover {
+    .mode-bar .btn.mode-active:hover,
+    .grade-bar .btn.grade-active:hover {
       background: #0d665f;
     }
 
@@ -471,6 +520,82 @@
       padding: 16px;
     }
 
+    .print-sheet.sheet-mode {
+      max-width: none;
+      padding: 12px;
+      overflow-x: auto;
+    }
+
+    .sheet-page {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .sheet-banner {
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000;
+      white-space: pre-line;
+      line-height: 1.25;
+      margin: 0 0 10px;
+      padding: 4px 0;
+    }
+
+    .sheet-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .sheet-table {
+      border-collapse: collapse;
+      table-layout: fixed;
+      width: 1280px;
+      min-width: 1280px;
+      font-family: Arial, "Noto Sans TC", sans-serif;
+      font-size: 10px;
+      color: #000;
+      background: #fff;
+    }
+
+    .sheet-table th,
+    .sheet-table td {
+      border: 1px solid #000;
+      padding: 3px 4px;
+      vertical-align: middle;
+      text-align: center;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      line-height: 1.2;
+      background: #fff;
+    }
+
+    .sheet-table thead th {
+      font-weight: 700;
+      background: #fff;
+    }
+
+    .sheet-table th.sheet-group {
+      background: #f3f3f3;
+    }
+
+    .sheet-table td.sheet-empty {
+      background: #d9ead3;
+    }
+
+    .sheet-table td.sheet-left,
+    .sheet-table th.sheet-left {
+      text-align: left;
+    }
+
+    .sheet-table .name-en-cell {
+      font-weight: 700;
+    }
+
     .print-page {
       background: #fff;
       border: 1px solid var(--line);
@@ -546,6 +671,11 @@
     }
 
     @media print {
+      @page {
+        size: landscape;
+        margin: 6mm;
+      }
+
       body {
         background: #fff !important;
       }
@@ -562,13 +692,16 @@
         overflow: visible;
       }
 
-      .print-sheet {
+      .print-sheet,
+      .print-sheet.sheet-mode {
         max-width: none;
         margin: 0;
         padding: 0;
+        overflow: visible;
       }
 
-      .print-page {
+      .print-page,
+      .sheet-page {
         border: none;
         border-radius: 0;
         box-shadow: none;
@@ -578,7 +711,8 @@
         break-after: page;
       }
 
-      .print-page:last-child {
+      .print-page:last-child,
+      .sheet-page:last-child {
         page-break-after: auto;
         break-after: auto;
       }
@@ -591,13 +725,41 @@
       .print-cell {
         border: 1px solid #333;
       }
+
+      .sheet-table-wrap {
+        overflow: visible;
+      }
+
+      .sheet-table {
+        width: 100%;
+        min-width: 0;
+        font-size: 8.5px;
+      }
+
+      .sheet-table td.sheet-empty {
+        background: #d9ead3 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .sheet-table thead th,
+      .sheet-table th.sheet-group {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header class="hero">
-      <h1>製作班級學生資料清單</h1>
+      <div class="hero-top">
+        <h1 id="pageTitle">製作班級學生資料清單</h1>
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button class="btn lang-active" id="langZhBtn" type="button" data-lang="zh">中文</button>
+          <button class="btn" id="langEnBtn" type="button" data-lang="en">EN</button>
+        </div>
+      </div>
       <div class="source-bar">
         <input class="source-input" id="sheetUrlInput" type="url" placeholder="貼上 Google 試算表網址（建議含 gid=）" autocomplete="off" spellcheck="false">
         <button class="btn primary" id="loadSheetBtn" type="button">載入試算表</button>
@@ -606,17 +768,24 @@
         <button class="btn mode-active" id="modeChineseBtn" type="button" data-mode="chinese">中文班</button>
         <button class="btn" id="modeEnglishBtn" type="button" data-mode="english">英文班</button>
         <button class="btn" id="modeMathBtn" type="button" data-mode="math">數學班</button>
+        <span id="enrichmentButtons" style="display:contents"></span>
+        <button class="btn" id="modeGradeBtn" type="button" data-mode="grade">年級</button>
+      </div>
+      <div class="grade-bar" id="gradeBar">
+        <span class="label" id="gradeLabel">年級：</span>
+        <div id="gradeButtons" style="display:contents"></div>
+        <button class="btn primary" id="gradePrintBtn" type="button">預覽列印年級表</button>
       </div>
       <div class="toolbar">
         <input class="search" id="searchInput" type="search" placeholder="搜尋姓名、班級、年級…" autocomplete="off">
       </div>
       <div class="sort-bar">
-        <span class="label">群組內排序：</span>
+        <span class="label" id="sortLabel">群組內排序：</span>
         <button class="btn active" id="sortEnBtn" type="button" data-sort="en">英文名</button>
         <button class="btn" id="sortDobBtn" type="button" data-sort="dob">生日</button>
       </div>
       <div class="display-bar">
-        <span class="label">顯示資料：</span>
+        <span class="label" id="displayLabel">顯示資料：</span>
         <button class="btn" id="showAllergyBtn" type="button" data-field="allergy">過敏</button>
         <button class="btn" id="showParent1Btn" type="button" data-field="parent1">家長1+聯絡電話</button>
         <button class="btn" id="showParent2Btn" type="button" data-field="parent2">家長2+聯絡電話</button>
@@ -629,10 +798,10 @@
     </header>
 
     <div class="legend">
-      <span class="chip legend-chinese"><span class="dot trad"></span>繁體字組</span>
-      <span class="chip legend-chinese"><span class="dot simp"></span>簡體字組</span>
-      <span class="chip legend-chinese"><span class="dot other"></span>其他／未定</span>
-      <span class="chip"><span class="name-sample">紅名字</span>紅色字為新生</span>
+      <span class="chip legend-chinese" id="legendTrad"><span class="dot trad"></span>繁體字組</span>
+      <span class="chip legend-chinese" id="legendSimp"><span class="dot simp"></span>簡體字組</span>
+      <span class="chip legend-chinese" id="legendOther"><span class="dot other"></span>其他／未定</span>
+      <span class="chip" id="legendNew"><span class="name-sample">紅名字</span>紅色字為新生</span>
     </div>
 
     <div class="groups" id="groups"></div>
@@ -648,14 +817,15 @@
   </div>
 
   <script>
-    // C D E G J K M O Q T U V W AA AB AC AD
+    // C D E G J K L M O P Q T U V W X AA AB AC AD AF AG
     const COL = {
       en: 2, zh: 3, dob: 4, grade: 6, enrolled: 9,
-      parent1: 10, parent1Phone: 12,
-      parent2: 14, parent2Phone: 16,
+      parent1: 10, parent1Rel: 11, parent1Phone: 12,
+      parent2: 14, parent2Rel: 15, parent2Phone: 16,
       emergency: 19, emergencyRel: 20, emergencyPhone: 21,
-      allergy: 22,
+      allergy: 22, medications: 23,
       chineseClass: 26, script: 27, englishClass: 28, mathClass: 29,
+      enrichment: 31, studyHall: 32,
     };
 
     const groupsEl = document.getElementById("groups");
@@ -682,32 +852,398 @@
     const modeChineseBtn = document.getElementById("modeChineseBtn");
     const modeEnglishBtn = document.getElementById("modeEnglishBtn");
     const modeMathBtn = document.getElementById("modeMathBtn");
+    const enrichmentButtonsEl = document.getElementById("enrichmentButtons");
+    const modeGradeBtn = document.getElementById("modeGradeBtn");
+    const gradeBar = document.getElementById("gradeBar");
+    const gradeButtonsEl = document.getElementById("gradeButtons");
+    const gradePrintBtn = document.getElementById("gradePrintBtn");
+    const langZhBtn = document.getElementById("langZhBtn");
+    const langEnBtn = document.getElementById("langEnBtn");
+    const pageTitle = document.getElementById("pageTitle");
 
-    const FIELD_LABELS = {
-      allergy: "過敏",
-      parent1: "家長1+聯絡電話",
-      parent2: "家長2+聯絡電話",
-      emergency: "緊急聯絡人+聯絡電話",
+    // Stable internal placeholders (not translated; UI maps them via t())
+    const EMPTY = {
+      chineseClass: "__EMPTY_CHINESE_CLASS__",
+      englishClass: "__EMPTY_ENGLISH_CLASS__",
+      mathClass: "__EMPTY_MATH_CLASS__",
+      script: "__EMPTY_SCRIPT__",
+      grade: "__EMPTY_GRADE__",
     };
 
-    const MODE_META = {
-      chinese: { label: "中文班", empty: "未填中文班" },
-      english: { label: "英文班", empty: "未填英文班" },
-      math: { label: "數學班", empty: "未填數學班" },
+    const I18N = {
+      zh: {
+        title: "製作班級學生資料清單",
+        sheetPlaceholder: "貼上 Google 試算表網址（建議含 gid=）",
+        loadSheet: "載入試算表",
+        modeChinese: "中文班",
+        modeEnglish: "英文班",
+        modeMath: "數學班",
+        modeEnrichment: "才藝課",
+        modeGrade: "年級",
+        gradeLabel: "年級：",
+        gradeAll: "全部",
+        gradePrint: "預覽列印年級表",
+        gradePrintHint: "年級表預覽：含標題、格線、欄寬；空白格為淺綠色",
+        chineseClass: "中文課",
+        englishClass: "英文課",
+        mathClass: "數學課",
+        enrichment: "才藝意願",
+        studyHall: "自習室",
+        emptyGrade: "未填年級",
+        searchPlaceholder: "搜尋姓名、班級、年級…",
+        sortLabel: "群組內排序：",
+        sortByEn: "英文名",
+        sortByDob: "生日",
+        displayLabel: "顯示資料：",
+        fieldAllergy: "過敏",
+        fieldParent1: "家長1+聯絡電話",
+        fieldParent2: "家長2+聯絡電話",
+        fieldEmergency: "緊急聯絡人+聯絡電話",
+        printPreview: "預覽列印",
+        statusPrompt: "請貼上試算表網址後按「載入試算表」",
+        legendTrad: "繁體字組",
+        legendSimp: "簡體字組",
+        legendOther: "其他／未定",
+        legendNew: "紅色字為新生",
+        legendNewSample: "紅名字",
+        printHintDefault: "預覽列印：每群組一頁，一格一位學生",
+        print: "列印",
+        closePreview: "關閉預覽",
+        emptyChineseClass: "未填中文班",
+        emptyEnglishClass: "未填英文班",
+        emptyMathClass: "未填數學班",
+        emptyScript: "未填字體偏好",
+        trad: "繁體字",
+        simp: "簡體字",
+        allergy: "過敏",
+        parent1: "家長1",
+        parent2: "家長2",
+        emergency: "緊急聯絡",
+        noZhName: "（無中文名）",
+        noEnName: "（無英文名）",
+        unnamed: "（無名）",
+        people: "人",
+        grade: "年級",
+        dob: "生日",
+        blank: "未填",
+        mode: "模式",
+        students: "學生",
+        groups: "群組",
+        updatedAt: "更新時間",
+        noSearch: "沒有符合搜尋的結果",
+        noData: "目前沒有資料",
+        emptyPrompt: "請貼上試算表網址後按「載入試算表」",
+        invalidUrl: "請貼上有效的 Google 試算表網址（需含 /spreadsheets/d/…）。",
+        loading: "正在從試算表載入…",
+        loaded: (n) => `已載入 ${n} 筆報名資料`,
+        loadFail: "載入失敗：請確認試算表已設為「知道連結的任何人可檢視」。本機可執行 python3 server.py。",
+        loadFailEmpty: "無法載入試算表資料",
+        printNeedFields: "請先在「顯示資料」勾選至少一個欄位，再預覽列印。",
+        printNoGroups: "目前沒有可列印的群組資料。",
+        printHint: (fields) => `每群組一頁｜一格一位學生｜僅印：${fields}`,
+        dupNote: (people, removed) =>
+          `已合併重複報名 <strong>${people}</strong> 人（略過 ${removed} 筆），僅保留一筆：`,
+        dupItem: (name, count, kept, dropped) =>
+          `<strong>${name}</strong>：共 ${count} 筆，保留第 ${kept} 列，略過第 ${dropped} 列`,
+      },
+      en: {
+        title: "Class Student List Builder",
+        sheetPlaceholder: "Paste Google Sheet URL (include gid= if possible)",
+        loadSheet: "Load Sheet",
+        modeChinese: "Chinese",
+        modeEnglish: "English",
+        modeMath: "Math",
+        modeEnrichment: "Enrichment",
+        modeGrade: "Grade",
+        gradeLabel: "Grade:",
+        gradeAll: "All",
+        gradePrint: "Print grade sheets",
+        gradePrintHint: "Grade sheet preview: titles, grid, column widths; blank cells are light green",
+        chineseClass: "Chinese",
+        englishClass: "English",
+        mathClass: "Math",
+        enrichment: "Enrichment",
+        studyHall: "Study hall",
+        emptyGrade: "No grade",
+        searchPlaceholder: "Search name, class, grade…",
+        sortLabel: "Sort within group:",
+        sortByEn: "English name",
+        sortByDob: "Birthday",
+        displayLabel: "Show fields:",
+        fieldAllergy: "Allergies",
+        fieldParent1: "Parent 1 + phone",
+        fieldParent2: "Parent 2 + phone",
+        fieldEmergency: "Emergency contact + phone",
+        printPreview: "Print preview",
+        statusPrompt: 'Paste a sheet URL, then click "Load Sheet".',
+        legendTrad: "Traditional",
+        legendSimp: "Simplified",
+        legendOther: "Other / TBD",
+        legendNew: "Red names = new students",
+        legendNewSample: "Red",
+        printHintDefault: "Print preview: one page per group, one cell per student",
+        print: "Print",
+        closePreview: "Close",
+        emptyChineseClass: "No Chinese class",
+        emptyEnglishClass: "No English class",
+        emptyMathClass: "No Math class",
+        emptyScript: "No script preference",
+        trad: "Traditional",
+        simp: "Simplified",
+        allergy: "Allergies",
+        parent1: "Parent 1",
+        parent2: "Parent 2",
+        emergency: "Emergency",
+        noZhName: "(No Chinese name)",
+        noEnName: "(No English name)",
+        unnamed: "(No name)",
+        people: "",
+        grade: "Grade",
+        dob: "DOB",
+        blank: "N/A",
+        mode: "Mode",
+        students: "Students",
+        groups: "Groups",
+        updatedAt: "Updated",
+        noSearch: "No matching results",
+        noData: "No data yet",
+        emptyPrompt: 'Paste a sheet URL, then click "Load Sheet".',
+        invalidUrl: "Please paste a valid Google Sheet URL (must include /spreadsheets/d/…).",
+        loading: "Loading sheet…",
+        loaded: (n) => `Loaded ${n} enrollment records`,
+        loadFail: 'Load failed. Make the sheet "Anyone with the link can view". Locally you can run python3 server.py.',
+        loadFailEmpty: "Unable to load sheet data",
+        printNeedFields: 'Select at least one field under "Show fields" before print preview.',
+        printNoGroups: "No groups available to print.",
+        printHint: (fields) => `One page per group | one cell per student | fields: ${fields}`,
+        dupNote: (people, removed) =>
+          `Merged duplicate enrollments for <strong>${people}</strong> student(s) (skipped ${removed} row(s)); kept one each:`,
+        dupItem: (name, count, kept, dropped) =>
+          `<strong>${name}</strong>: ${count} rows, kept row ${kept}, skipped row(s) ${dropped}`,
+      },
     };
 
+    let uiLang = "zh"; // zh | en
     let allStudents = [];
     let loadStats = { raw: 0, kept: 0, duplicates: [] };
-    let classMode = "chinese"; // chinese | english | math
+    let classMode = "chinese"; // chinese | english | math | enrichment | grade
+    let enrichmentFilter = ""; // selected enrichment class name from AF
+    let gradeFilter = "all"; // all | raw grade string
     let sortMode = "en"; // en | dob
     let currentSheetId = "";
     let currentGid = "0";
+    let statusKind = "prompt"; // prompt | loading | loaded | invalid | error
     let showFields = {
       allergy: false,
       parent1: false,
       parent2: false,
       emergency: false,
     };
+
+    function t(key, ...args) {
+      const pack = I18N[uiLang] || I18N.zh;
+      const val = pack[key];
+      if (typeof val === "function") return val(...args);
+      return val != null ? val : (I18N.zh[key] || key);
+    }
+
+    function fieldLabel(key) {
+      if (key === "allergy") return t("fieldAllergy");
+      if (key === "parent1") return t("fieldParent1");
+      if (key === "parent2") return t("fieldParent2");
+      if (key === "emergency") return t("fieldEmergency");
+      return key;
+    }
+
+    function modeLabel(mode) {
+      if (mode === "english") return t("modeEnglish");
+      if (mode === "math") return t("modeMath");
+      if (mode === "enrichment") return enrichmentFilter || t("modeEnrichment");
+      if (mode === "grade") return t("modeGrade");
+      return t("modeChinese");
+    }
+
+    // Canonical labels for the same course written differently in AF (form + parent notes).
+    const ENRICHMENT_ALIASES = {
+      "pickle ball": "Pickle ball 匹克球",
+      "pickleball": "Pickle ball 匹克球",
+      "匹克球": "Pickle ball 匹克球",
+      "music 音樂": "Music 音樂",
+      "music": "Music 音樂",
+      "music lessons": "Music 音樂",
+    };
+
+    function titleCaseWord(word) {
+      const w = String(word || "");
+      if (!w) return "";
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+    }
+
+    // Normalize one AF token: merge aliases, drop comments, shorten long parent notes.
+    function normalizeEnrichment(raw) {
+      let s = String(raw || "").replace(/\s+/g, " ").trim();
+      if (!s) return "";
+      if (/[。！？!?]/.test(s)) return "";
+      if (/都有興趣|了解看看|也許依照|學習狀況|but\b.*understand|enough students/i.test(s)) return "";
+
+      const aliasKey = /[\u4e00-\u9fff]/.test(s) && !/[A-Za-z]/.test(s) ? s : s.toLowerCase();
+      if (ENRICHMENT_ALIASES[aliasKey]) return ENRICHMENT_ALIASES[aliasKey];
+
+      // Parent suggestion mixed into the same cell — keep a short course keyword only.
+      if (/^[A-Za-z]/.test(s) && !/[\u4e00-\u9fff]/.test(s)) {
+        const words = s.split(/\s+/);
+        if (words.length >= 4 || /\b(the|more|better|variety|enough|students|participate|understand)\b/i.test(s)) {
+          const first = words[0].replace(/[^A-Za-z]/g, "");
+          return first ? titleCaseWord(first) : "";
+        }
+      }
+
+      if (/[A-Za-z]/.test(s) && /[\u4e00-\u9fff]/.test(s)) return s;
+      if (/^[\u4e00-\u9fff]{1,12}$/.test(s)) return s;
+      if (/^[A-Za-z][A-Za-z0-9 &'/-]*(?:\s+[A-Za-z][A-Za-z0-9 &'/-]*){0,3}$/.test(s)) return s;
+      return "";
+    }
+
+    // Google Forms checkbox multi-select: "English 中文, English 中文, ..."
+    function parseEnrichments(raw) {
+      const seen = new Set();
+      const out = [];
+      String(raw || "").split(/\s*[,，]\s*/).forEach((part) => {
+        const name = normalizeEnrichment(part);
+        if (!name || seen.has(name)) return;
+        seen.add(name);
+        out.push(name);
+      });
+      return out;
+    }
+
+    function studentHasEnrichment(s, name) {
+      if (!name) return false;
+      return (s.enrichmentList || []).includes(name);
+    }
+
+    function listEnrichments() {
+      const counts = new Map();
+      allStudents.forEach((s) => {
+        (s.enrichmentList || []).forEach((name) => {
+          counts.set(name, (counts.get(name) || 0) + 1);
+        });
+      });
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "zh-Hant"))
+        .map(([name]) => name);
+    }
+
+    function updateEnrichmentButtons() {
+      if (!enrichmentButtonsEl) return;
+      const names = listEnrichments();
+      if (classMode === "enrichment" && enrichmentFilter && !names.includes(enrichmentFilter)) {
+        enrichmentFilter = names[0] || "";
+        if (!enrichmentFilter) classMode = "chinese";
+      }
+      enrichmentButtonsEl.innerHTML = names.map((name) => {
+        const active = classMode === "enrichment" && enrichmentFilter === name;
+        return `<button class="btn${active ? " mode-active" : ""}" type="button" data-enrichment="${encodeURIComponent(name)}">${escapeHtml(name)}</button>`;
+      }).join("");
+      enrichmentButtonsEl.querySelectorAll("button[data-enrichment]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          try {
+            setEnrichmentMode(decodeURIComponent(btn.getAttribute("data-enrichment") || ""));
+          } catch (e) {
+            setEnrichmentMode(btn.getAttribute("data-enrichment") || "");
+          }
+        });
+      });
+    }
+
+    function setEnrichmentMode(name) {
+      if (!name) return;
+      classMode = "enrichment";
+      enrichmentFilter = name;
+      gradeFilter = "all";
+      updateModeButtons();
+      render();
+    }
+
+    function displayTitle(title) {
+      if (title === EMPTY.chineseClass) return t("emptyChineseClass");
+      if (title === EMPTY.englishClass) return t("emptyEnglishClass");
+      if (title === EMPTY.mathClass) return t("emptyMathClass");
+      if (title === EMPTY.grade) return t("emptyGrade");
+      return title;
+    }
+
+    function updateLangButtons() {
+      langZhBtn.classList.toggle("lang-active", uiLang === "zh");
+      langEnBtn.classList.toggle("lang-active", uiLang === "en");
+      document.documentElement.lang = uiLang === "en" ? "en" : "zh-Hant";
+    }
+
+    function applyStaticUi() {
+      document.title = t("title");
+      pageTitle.textContent = t("title");
+      sheetUrlInput.placeholder = t("sheetPlaceholder");
+      loadSheetBtn.textContent = t("loadSheet");
+      modeChineseBtn.textContent = t("modeChinese");
+      modeEnglishBtn.textContent = t("modeEnglish");
+      modeMathBtn.textContent = t("modeMath");
+      modeGradeBtn.textContent = t("modeGrade");
+      document.getElementById("gradeLabel").textContent = t("gradeLabel");
+      gradePrintBtn.textContent = t("gradePrint");
+      searchInput.placeholder = t("searchPlaceholder");
+      updateEnrichmentButtons();
+      updateGradeBar();
+      document.getElementById("sortLabel").textContent = t("sortLabel");
+      sortEnBtn.textContent = t("sortByEn");
+      sortDobBtn.textContent = t("sortByDob");
+      document.getElementById("displayLabel").textContent = t("displayLabel");
+      showFieldBtns.allergy.textContent = t("fieldAllergy");
+      showFieldBtns.parent1.textContent = t("fieldParent1");
+      showFieldBtns.parent2.textContent = t("fieldParent2");
+      showFieldBtns.emergency.textContent = t("fieldEmergency");
+      printPreviewBtn.textContent = t("printPreview");
+      document.getElementById("legendTrad").innerHTML =
+        `<span class="dot trad"></span>${escapeHtml(t("legendTrad"))}`;
+      document.getElementById("legendSimp").innerHTML =
+        `<span class="dot simp"></span>${escapeHtml(t("legendSimp"))}`;
+      document.getElementById("legendOther").innerHTML =
+        `<span class="dot other"></span>${escapeHtml(t("legendOther"))}`;
+      document.getElementById("legendNew").innerHTML =
+        `<span class="name-sample">${escapeHtml(t("legendNewSample"))}</span>${escapeHtml(t("legendNew"))}`;
+      doPrintBtn.textContent = t("print");
+      closePrintBtn.textContent = t("closePreview");
+      refreshStatusText();
+    }
+
+    function refreshStatusText() {
+      if (statusKind === "loading") statusEl.textContent = t("loading");
+      else if (statusKind === "loaded") statusEl.textContent = t("loaded", allStudents.length);
+      else if (statusKind === "invalid") statusEl.textContent = t("invalidUrl");
+      else if (statusKind === "error") statusEl.textContent = t("loadFail");
+      else statusEl.textContent = t("statusPrompt");
+    }
+
+    function setUiLang(lang) {
+      uiLang = lang === "en" ? "en" : "zh";
+      updateLangButtons();
+      applyStaticUi();
+      renderDupNote();
+      render();
+      if (printOverlay.classList.contains("open")) {
+        if (classMode === "grade" || printSheet.classList.contains("sheet-mode")) {
+          printHint.textContent = t("gradePrintHint");
+          printSheet.classList.add("sheet-mode");
+          printSheet.innerHTML = buildGradeSheetPagesHtml();
+        } else {
+          const keys = selectedShowKeys();
+          const fieldText = keys.map((k) => fieldLabel(k)).join(uiLang === "en" ? ", " : "、");
+          printHint.textContent = keys.length ? t("printHint", fieldText) : t("printHintDefault");
+          printSheet.classList.remove("sheet-mode");
+          const { groups } = currentGroups();
+          printSheet.innerHTML = buildPrintPagesHtml(groups);
+        }
+      }
+    }
 
     function baseUrl() {
       if (location.protocol === "file:") return "http://127.0.0.1:5002";
@@ -740,32 +1276,30 @@
           url:
             `${baseUrl()}/api/sheet_csv?sheet_id=${encodeURIComponent(sheetId)}` +
             `&gid=${encodeURIComponent(gid)}&t=${Date.now()}`,
-          mode: "raw",
         });
       }
       list.push(
-        { url: googleUrl + "&t=" + Date.now(), mode: "raw" },
-        { url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(googleUrl), mode: "raw" },
-        { url: "https://corsproxy.io/?url=" + encodeURIComponent(googleUrl), mode: "raw" }
+        { url: googleUrl + "&t=" + Date.now() },
+        { url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(googleUrl) },
+        { url: "https://corsproxy.io/?url=" + encodeURIComponent(googleUrl) }
       );
       return list;
     }
 
     async function fetchSheetCsvText(sheetId, gid) {
-      const candidates = sheetFetchCandidates(sheetId, gid);
       let lastErr = null;
-      for (const c of candidates) {
+      for (const c of sheetFetchCandidates(sheetId, gid)) {
         try {
           const resp = await fetch(c.url, { cache: "no-store" });
           if (!resp.ok) throw new Error("HTTP " + resp.status);
           const text = await resp.text();
-          if (!looksLikeCsv(text)) throw new Error("不是有效 CSV（試算表可能未公開）");
+          if (!looksLikeCsv(text)) throw new Error("invalid csv");
           return text;
         } catch (err) {
           lastErr = err;
         }
       }
-      throw lastErr || new Error("無法取得試算表");
+      throw lastErr || new Error("unable to fetch sheet");
     }
 
     function parseSheetSource(raw) {
@@ -841,9 +1375,10 @@
     }
 
     function scriptLabel(script, kind) {
-      if (kind === "simp") return "簡體字";
-      if (kind === "trad") return "繁體字";
-      return script || "未填字體偏好";
+      if (kind === "simp") return t("simp");
+      if (kind === "trad") return t("trad");
+      if (!script || script === EMPTY.script) return t("emptyScript");
+      return script; // raw sheet value
     }
 
     function classSortKey(name) {
@@ -861,7 +1396,14 @@
       if (/Intermediate Math/i.test(name)) return [5, 2, name];
       if (/Not Enrolling|不報名/i.test(name)) return [7, 0, name];
       if (/Not Sure|尚未確定/i.test(name)) return [8, 0, name];
-      if (/未填/.test(name)) return [9, 0, name];
+      if (
+        name === EMPTY.chineseClass ||
+        name === EMPTY.englishClass ||
+        name === EMPTY.mathClass ||
+        /未填|No .* class/i.test(name)
+      ) {
+        return [9, 0, name];
+      }
       return [6, 0, name];
     }
 
@@ -869,8 +1411,60 @@
       modeChineseBtn.classList.toggle("mode-active", classMode === "chinese");
       modeEnglishBtn.classList.toggle("mode-active", classMode === "english");
       modeMathBtn.classList.toggle("mode-active", classMode === "math");
+      modeGradeBtn.classList.toggle("mode-active", classMode === "grade");
+      gradeBar.classList.toggle("show", classMode === "grade");
       document.querySelectorAll(".legend-chinese").forEach((el) => {
         el.style.display = classMode === "chinese" ? "" : "none";
+      });
+      updateEnrichmentButtons();
+      updateGradeBar();
+    }
+
+    function gradeSortKey(grade) {
+      const g = (grade || "").trim();
+      if (g === EMPTY.grade) return [99, 0, g];
+      const lower = g.toLowerCase();
+      if (/^tk\b|transitional/i.test(lower)) return [0, 0, g];
+      if (/^k\b|^kinder/i.test(lower)) return [1, 0, g];
+      const m = lower.match(/(\d+)/);
+      if (m) return [2, Number(m[1]), g];
+      return [50, 0, g];
+    }
+
+    function listGrades() {
+      const set = new Set();
+      allStudents.forEach((s) => set.add(s.grade || EMPTY.grade));
+      return [...set].sort((a, b) => {
+        const ka = gradeSortKey(a);
+        const kb = gradeSortKey(b);
+        for (let i = 0; i < 3; i++) {
+          if (ka[i] < kb[i]) return -1;
+          if (ka[i] > kb[i]) return 1;
+        }
+        return 0;
+      });
+    }
+
+    function updateGradeBar() {
+      if (!gradeButtonsEl) return;
+      const grades = listGrades();
+      if (gradeFilter !== "all" && !grades.includes(gradeFilter)) gradeFilter = "all";
+      const buttons = [
+        `<button class="btn${gradeFilter === "all" ? " grade-active" : ""}" type="button" data-grade="all">${escapeHtml(t("gradeAll"))}</button>`,
+      ];
+      grades.forEach((g) => {
+        const label = g === EMPTY.grade ? t("emptyGrade") : g;
+        buttons.push(
+          `<button class="btn${gradeFilter === g ? " grade-active" : ""}" type="button" data-grade="${escapeHtml(g)}">${escapeHtml(label)}</button>`
+        );
+      });
+      gradeButtonsEl.innerHTML = buttons.join("");
+      gradeButtonsEl.querySelectorAll("button[data-grade]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          gradeFilter = btn.getAttribute("data-grade") || "all";
+          updateGradeBar();
+          render();
+        });
       });
     }
 
@@ -879,7 +1473,7 @@
         return {
           key: "en||" + s.englishClass,
           title: s.englishClass,
-          kicker: "英文班",
+          script: "",
           kind: "other",
         };
       }
@@ -887,16 +1481,40 @@
         return {
           key: "math||" + s.mathClass,
           title: s.mathClass,
-          kicker: "數學班",
+          script: "",
+          kind: "other",
+        };
+      }
+      if (classMode === "enrichment") {
+        return {
+          key: "enrich||" + enrichmentFilter,
+          title: enrichmentFilter,
+          script: "",
+          kind: "other",
+        };
+      }
+      if (classMode === "grade") {
+        return {
+          key: "grade||" + s.grade,
+          title: s.grade,
+          script: "",
           kind: "other",
         };
       }
       return {
         key: "zh||" + s.chineseClass + "||" + s.script,
         title: s.chineseClass,
-        kicker: scriptLabel(s.script, s.kind),
+        script: s.script,
         kind: s.kind,
       };
+    }
+
+    function groupKicker(g) {
+      if (classMode === "enrichment") return t("modeEnrichment");
+      if (classMode === "english" || classMode === "math" || classMode === "grade") {
+        return modeLabel(classMode);
+      }
+      return scriptLabel(g.script, g.kind);
     }
 
     function studentKey(s) {
@@ -910,15 +1528,16 @@
 
     function displayName(s) {
       if (s.zh && s.en) return s.zh + "（" + s.en + "）";
-      return s.zh || s.en || "（無名）";
+      return s.zh || s.en || t("unnamed");
     }
 
     function scoreStudent(s) {
       // Prefer later rows and more complete class placement.
       let score = s.rowIndex;
-      if (s.chineseClass && s.chineseClass !== MODE_META.chinese.empty) score += 10000;
-      if (s.englishClass && s.englishClass !== MODE_META.english.empty) score += 3000;
-      if (s.mathClass && s.mathClass !== MODE_META.math.empty) score += 3000;
+      if (s.chineseClass && s.chineseClass !== EMPTY.chineseClass) score += 10000;
+      if (s.englishClass && s.englishClass !== EMPTY.englishClass) score += 3000;
+      if (s.mathClass && s.mathClass !== EMPTY.mathClass) score += 3000;
+      if (s.grade && s.grade !== EMPTY.grade) score += 500;
       if (s.zh) score += 100;
       if (s.en) score += 50;
       if (s.grade) score += 20;
@@ -933,13 +1552,14 @@
         const en = cell(r, COL.en);
         const zh = cell(r, COL.zh);
         const dob = cell(r, COL.dob);
-        const grade = cell(r, COL.grade);
+        const grade = cell(r, COL.grade) || EMPTY.grade;
         const enrolled = cell(r, COL.enrolled);
-        const chineseClass = cell(r, COL.chineseClass) || MODE_META.chinese.empty;
-        const script = cell(r, COL.script) || "未填字體偏好";
-        const englishClass = cell(r, COL.englishClass) || MODE_META.english.empty;
-        const mathClass = cell(r, COL.mathClass) || MODE_META.math.empty;
-        if (!en && !zh && !dob && !grade) continue;
+        const chineseClass = cell(r, COL.chineseClass) || EMPTY.chineseClass;
+        const script = cell(r, COL.script) || EMPTY.script;
+        const englishClass = cell(r, COL.englishClass) || EMPTY.englishClass;
+        const mathClass = cell(r, COL.mathClass) || EMPTY.mathClass;
+        const enrichmentList = parseEnrichments(cell(r, COL.enrichment));
+        if (!en && !zh && !dob && grade === EMPTY.grade) continue;
         raw.push({
           en,
           zh,
@@ -948,9 +1568,12 @@
           enrolled,
           isNew: /^No\b/i.test(enrolled),
           allergy: cell(r, COL.allergy),
+          medications: cell(r, COL.medications),
           parent1: cell(r, COL.parent1),
+          parent1Rel: cell(r, COL.parent1Rel),
           parent1Phone: cell(r, COL.parent1Phone),
           parent2: cell(r, COL.parent2),
+          parent2Rel: cell(r, COL.parent2Rel),
           parent2Phone: cell(r, COL.parent2Phone),
           emergency: cell(r, COL.emergency),
           emergencyRel: cell(r, COL.emergencyRel),
@@ -959,6 +1582,9 @@
           script,
           englishClass,
           mathClass,
+          enrichmentList,
+          enrichment: enrichmentList.join(", "),
+          studyHall: cell(r, COL.studyHall),
           kind: scriptKind(script),
           rowIndex: i + 1,
         });
@@ -980,6 +1606,9 @@
         if (!dupsByKey.has(key)) dupsByKey.set(key, []);
         const winner = scoreStudent(s) >= scoreStudent(prev) ? s : prev;
         const loser = winner === s ? prev : s;
+        const merged = Array.from(new Set([...(winner.enrichmentList || []), ...(loser.enrichmentList || [])]));
+        winner.enrichmentList = merged;
+        if (merged.length) winner.enrichment = merged.join(", ");
         dupsByKey.get(key).push(loser);
         bestByKey.set(key, winner);
       }
@@ -1007,31 +1636,53 @@
         return;
       }
       const removed = loadStats.raw - loadStats.kept;
+      const sep = uiLang === "en" ? ", " : "、";
       const items = dups.map((d) =>
-        `<li><strong>${escapeHtml(d.name)}</strong>：共 ${d.count} 筆，保留第 ${d.keptRow} 列，略過第 ${d.droppedRows.join("、")} 列</li>`
+        `<li>${t(
+          "dupItem",
+          escapeHtml(d.name),
+          d.count,
+          d.keptRow,
+          d.droppedRows.join(sep)
+        )}</li>`
       ).join("");
-      dupNoteEl.innerHTML =
-        `已合併重複報名 <strong>${dups.length}</strong> 人（略過 ${removed} 筆），僅保留一筆：` +
-        `<ul>${items}</ul>`;
+      dupNoteEl.innerHTML = t("dupNote", dups.length, removed) + `<ul>${items}</ul>`;
       dupNoteEl.classList.add("show");
     }
 
     function groupStudents(students) {
+      let list = students;
+      if (classMode === "enrichment") {
+        if (!enrichmentFilter) return [];
+        list = students.filter((s) => studentHasEnrichment(s, enrichmentFilter));
+      }
       const map = new Map();
-      for (const s of students) {
+      for (const s of list) {
         const info = groupInfoForStudent(s);
         if (!map.has(info.key)) {
           map.set(info.key, {
             title: info.title,
-            kicker: info.kicker,
+            script: info.script,
             kind: info.kind,
             students: [],
           });
         }
         map.get(info.key).students.push(s);
       }
-      const groups = [...map.values()];
+      let groups = [...map.values()];
+      if (classMode === "grade" && gradeFilter !== "all") {
+        groups = groups.filter((g) => g.title === gradeFilter);
+      }
       groups.sort((a, b) => {
+        if (classMode === "grade") {
+          const ka = gradeSortKey(a.title);
+          const kb = gradeSortKey(b.title);
+          for (let i = 0; i < 3; i++) {
+            if (ka[i] < kb[i]) return -1;
+            if (ka[i] > kb[i]) return 1;
+          }
+          return 0;
+        }
         const ka = classSortKey(a.title);
         const kb = classSortKey(b.title);
         for (let i = 0; i < 3; i++) {
@@ -1039,12 +1690,193 @@
           if (ka[i] > kb[i]) return 1;
         }
         const order = { trad: 0, simp: 1, other: 2 };
-        return (order[a.kind] - order[b.kind]) || a.kicker.localeCompare(b.kicker, "zh-Hant");
+        return (order[a.kind] - order[b.kind]) || String(a.script || "").localeCompare(String(b.script || ""), "zh-Hant");
       });
       for (const g of groups) {
         g.students.sort(compareStudents);
       }
       return groups;
+    }
+
+    function sheetValue(value, emptyToken) {
+      if (!value || value === emptyToken) return "";
+      return value;
+    }
+
+    function gradeBannerTitle(grade) {
+      const g = (grade || "").trim();
+      const lower = g.toLowerCase();
+      let label = g.toUpperCase();
+      if (/^tk\b/i.test(lower)) label = "TK";
+      else if (/^k\b|^kinder/i.test(lower)) label = "KINDER";
+      else {
+        const m = lower.match(/(\d+)/);
+        if (m) {
+          const n = Number(m[1]);
+          const ord = n === 1 ? "1ST" : n === 2 ? "2ND" : n === 3 ? "3RD" : `${n}TH`;
+          label = `${ord} GRADE`;
+        }
+      }
+      return `${label} LEVEL\n(CHINESE / ENGLISH/ MATH / ENRICHMENT / STUDY HALL)`;
+    }
+
+    function sheetCell(value, extraClass) {
+      const v = String(value ?? "").trim();
+      const empty = !v;
+      const cls = ["sheet-cell"];
+      if (empty) cls.push("sheet-empty");
+      if (extraClass) cls.push(extraClass);
+      return `<td class="${cls.join(" ")}">${empty ? "" : escapeHtml(v)}</td>`;
+    }
+
+    function collectGradeStudents() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      let students = allStudents.filter((s) => matchesQuery(s, q));
+      if (gradeFilter !== "all") {
+        students = students.filter((s) => s.grade === gradeFilter);
+      }
+      const byGrade = new Map();
+      students.forEach((s) => {
+        const g = s.grade || EMPTY.grade;
+        if (!byGrade.has(g)) byGrade.set(g, []);
+        byGrade.get(g).push(s);
+      });
+      const grades = [...byGrade.keys()].sort((a, b) => {
+        const ka = gradeSortKey(a);
+        const kb = gradeSortKey(b);
+        for (let i = 0; i < 3; i++) {
+          if (ka[i] < kb[i]) return -1;
+          if (ka[i] > kb[i]) return 1;
+        }
+        return 0;
+      });
+      return { students, grades, byGrade };
+    }
+
+    function buildGradeSheetPagesHtml() {
+      const { students, grades, byGrade } = collectGradeStudents();
+      if (!students.length) return "";
+
+      const colgroup = `
+        <colgroup>
+          <col style="width:90px"><col style="width:70px"><col style="width:48px"><col style="width:70px">
+          <col style="width:110px"><col style="width:95px"><col style="width:90px"><col style="width:90px">
+          <col style="width:120px"><col style="width:75px"><col style="width:80px"><col style="width:60px">
+          <col style="width:85px"><col style="width:55px"><col style="width:75px">
+          <col style="width:85px"><col style="width:55px"><col style="width:75px">
+          <col style="width:85px"><col style="width:55px"><col style="width:75px">
+        </colgroup>`;
+
+      return grades.map((g) => {
+        const list = [...byGrade.get(g)].sort(compareStudents);
+        const body = list.map((s) => `
+          <tr>
+            ${sheetCell(s.en, "sheet-left name-en-cell")}
+            ${sheetCell(s.zh, "sheet-left")}
+            ${sheetCell(sheetValue(s.grade, EMPTY.grade))}
+            ${sheetCell(s.dob)}
+            ${sheetCell(sheetValue(s.chineseClass, EMPTY.chineseClass), "sheet-left")}
+            ${sheetCell(sheetValue(s.script, EMPTY.script), "sheet-left")}
+            ${sheetCell(sheetValue(s.englishClass, EMPTY.englishClass), "sheet-left")}
+            ${sheetCell(sheetValue(s.mathClass, EMPTY.mathClass), "sheet-left")}
+            ${sheetCell(s.enrichment, "sheet-left")}
+            ${sheetCell(s.studyHall, "sheet-left")}
+            ${sheetCell(s.allergy, "sheet-left")}
+            ${sheetCell(s.medications, "sheet-left")}
+            ${sheetCell(s.parent1, "sheet-left")}
+            ${sheetCell(s.parent1Rel)}
+            ${sheetCell(s.parent1Phone)}
+            ${sheetCell(s.parent2, "sheet-left")}
+            ${sheetCell(s.parent2Rel)}
+            ${sheetCell(s.parent2Phone)}
+            ${sheetCell(s.emergency, "sheet-left")}
+            ${sheetCell(s.emergencyRel)}
+            ${sheetCell(s.emergencyPhone)}
+          </tr>
+        `).join("");
+
+        return `
+          <section class="sheet-page">
+            <h2 class="sheet-banner">${escapeHtml(gradeBannerTitle(g === EMPTY.grade ? "UNKNOWN" : g))}</h2>
+            <div class="sheet-table-wrap">
+              <table class="sheet-table">
+                ${colgroup}
+                <thead>
+                  <tr>
+                    <th class="sheet-group" colspan="2">STUDENT NAMES</th>
+                    <th class="sheet-group">GRADE</th>
+                    <th class="sheet-group">BIRTHDATE</th>
+                    <th class="sheet-group" colspan="6">CLASSES</th>
+                    <th class="sheet-group" colspan="2">ALLERGIES</th>
+                    <th class="sheet-group" colspan="6">PARENT INFORMATION</th>
+                    <th class="sheet-group" colspan="3">ADDITIONAL EMERGENCY CONTACT</th>
+                  </tr>
+                  <tr>
+                    <th>English</th>
+                    <th>Chinese</th>
+                    <th>Grade</th>
+                    <th>Birthday</th>
+                    <th>CHINESE</th>
+                    <th>Traditional / Simplified</th>
+                    <th>ENGLISH</th>
+                    <th>MATH</th>
+                    <th>ENRICHMENT</th>
+                    <th>STUDY HALL</th>
+                    <th>Allergies</th>
+                    <th>Medications</th>
+                    <th>Parent 1</th>
+                    <th>Rel</th>
+                    <th>Phone</th>
+                    <th>Parent 2</th>
+                    <th>Rel</th>
+                    <th>Phone</th>
+                    <th>Emergency</th>
+                    <th>Rel</th>
+                    <th>Phone</th>
+                  </tr>
+                </thead>
+                <tbody>${body}</tbody>
+              </table>
+            </div>
+          </section>
+        `;
+      }).join("");
+    }
+
+    function openGradeSheetPreview() {
+      if (!allStudents.length) {
+        alert(t("noData"));
+        return;
+      }
+      const { students } = collectGradeStudents();
+      if (!students.length) {
+        alert(t("noSearch"));
+        return;
+      }
+      printHint.textContent = t("gradePrintHint");
+      printSheet.classList.add("sheet-mode");
+      printSheet.innerHTML = buildGradeSheetPagesHtml();
+      printOverlay.classList.add("open");
+      printOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function renderGradeDetails(s) {
+      if (classMode !== "grade") return "";
+      const rows = [
+        { label: t("chineseClass"), value: sheetValue(s.chineseClass, EMPTY.chineseClass) },
+        { label: t("trad") + " / " + t("simp"), value: sheetValue(s.script, EMPTY.script) },
+        { label: t("englishClass"), value: sheetValue(s.englishClass, EMPTY.englishClass) },
+        { label: t("mathClass"), value: sheetValue(s.mathClass, EMPTY.mathClass) },
+        { label: t("enrichment"), value: s.enrichment || "" },
+        { label: t("studyHall"), value: s.studyHall || "" },
+      ].filter((r) => r.value);
+      if (!rows.length) return "";
+      return `<div class="extra-fields">${rows.map((row) => `
+        <div class="extra-row">
+          <span class="extra-label">${escapeHtml(row.label)}</span>
+          <span class="extra-value">${escapeHtml(row.value)}</span>
+        </div>
+      `).join("")}</div>`;
     }
 
     function parseDob(value) {
@@ -1115,19 +1947,19 @@
       const rows = [];
       if (showFields.allergy) {
         const value = cleanPart(s.allergy);
-        if (value) rows.push({ label: "過敏", value, alert: true });
+        if (value) rows.push({ label: t("allergy"), value, alert: true });
       }
       if (showFields.parent1) {
         const value = joinContact(s.parent1, s.parent1Phone);
-        if (value) rows.push({ label: "家長1", value });
+        if (value) rows.push({ label: t("parent1"), value });
       }
       if (showFields.parent2) {
         const value = joinContact(s.parent2, s.parent2Phone);
-        if (value) rows.push({ label: "家長2", value });
+        if (value) rows.push({ label: t("parent2"), value });
       }
       if (showFields.emergency) {
         const value = joinContact(s.emergency, s.emergencyPhone, s.emergencyRel);
-        if (value) rows.push({ label: "緊急聯絡", value });
+        if (value) rows.push({ label: t("emergency"), value });
       }
       return rows;
     }
@@ -1164,19 +1996,22 @@
           return `
             <div class="print-cell${s.isNew ? " is-new" : ""}">
               <div class="names">
-                <span class="name-zh">${escapeHtml(s.zh || "（無中文名）")}</span>
-                <span class="name-en">${escapeHtml(s.en || "（無英文名）")}</span>
+                <span class="name-zh">${escapeHtml(s.zh || t("noZhName"))}</span>
+                <span class="name-en">${escapeHtml(s.en || t("noEnName"))}</span>
               </div>
               ${fieldsHtml}
             </div>
           `;
         }).join("");
 
+        const peopleText = uiLang === "en"
+          ? `${g.students.length} ${g.students.length === 1 ? "student" : "students"}`
+          : `${g.students.length} ${t("people")}`;
         return `
           <section class="print-page">
             <div class="print-page-head">
-              <h2 class="print-page-title">${escapeHtml(g.kicker)}｜${escapeHtml(g.title)}</h2>
-              <div class="print-page-meta">${g.students.length} 人</div>
+              <h2 class="print-page-title">${escapeHtml(groupKicker(g))}｜${escapeHtml(displayTitle(g.title))}</h2>
+              <div class="print-page-meta">${peopleText}</div>
             </div>
             <div class="print-grid">${cells}</div>
           </section>
@@ -1185,18 +2020,23 @@
     }
 
     function openPrintPreview() {
+      if (classMode === "grade") {
+        openGradeSheetPreview();
+        return;
+      }
       const keys = selectedShowKeys();
       if (!keys.length) {
-        alert("請先在「顯示資料」勾選至少一個欄位，再預覽列印。");
+        alert(t("printNeedFields"));
         return;
       }
       const { groups } = currentGroups();
       if (!groups.length) {
-        alert("目前沒有可列印的群組資料。");
+        alert(t("printNoGroups"));
         return;
       }
-      const fieldText = keys.map((k) => FIELD_LABELS[k]).join("、");
-      printHint.textContent = `每群組一頁｜一格一位學生｜僅印：${fieldText}`;
+      const fieldText = keys.map((k) => fieldLabel(k)).join(uiLang === "en" ? ", " : "、");
+      printHint.textContent = t("printHint", fieldText);
+      printSheet.classList.remove("sheet-mode");
       printSheet.innerHTML = buildPrintPagesHtml(groups);
       printOverlay.classList.add("open");
       printOverlay.setAttribute("aria-hidden", "false");
@@ -1205,6 +2045,7 @@
     function closePrintPreview() {
       printOverlay.classList.remove("open");
       printOverlay.setAttribute("aria-hidden", "true");
+      printSheet.classList.remove("sheet-mode");
       printSheet.innerHTML = "";
     }
 
@@ -1213,6 +2054,7 @@
       const hay = [
         student.en, student.zh, student.dob, student.grade,
         student.chineseClass, student.script, student.englishClass, student.mathClass,
+        student.enrichment, student.studyHall, student.allergy,
       ].join(" ").toLowerCase();
       return hay.includes(q);
     }
@@ -1230,14 +2072,19 @@
       const filtered = allStudents.filter((s) => matchesQuery(s, q));
       const groups = groupStudents(filtered);
 
+      const locale = uiLang === "en" ? "en-US" : "zh-TW";
       metaBar.innerHTML =
-        `<span>模式 <strong>${MODE_META[classMode].label}</strong></span>` +
-        `<span>學生 <strong>${filtered.length}</strong>${q ? ` / ${allStudents.length}` : ""}</span>` +
-        `<span>群組 <strong>${groups.length}</strong></span>` +
-        `<span>更新時間 <strong>${new Date().toLocaleString("zh-TW")}</strong></span>`;
+        `<span>${escapeHtml(t("mode"))} <strong>${escapeHtml(modeLabel(classMode))}</strong></span>` +
+        `<span>${escapeHtml(t("students"))} <strong>${filtered.length}</strong>${q ? ` / ${allStudents.length}` : ""}</span>` +
+        `<span>${escapeHtml(t("groups"))} <strong>${groups.length}</strong></span>` +
+        `<span>${escapeHtml(t("updatedAt"))} <strong>${new Date().toLocaleString(locale)}</strong></span>`;
 
       if (!groups.length) {
-        groupsEl.innerHTML = `<div class="empty">${allStudents.length ? "沒有符合搜尋的結果" : "目前沒有資料"}</div>`;
+        let emptyMsg = t("noData");
+        if (allStudents.length) emptyMsg = t("noSearch");
+        else if (statusKind === "prompt" || statusKind === "invalid") emptyMsg = t("emptyPrompt");
+        else if (statusKind === "error") emptyMsg = t("loadFailEmpty");
+        groupsEl.innerHTML = `<div class="empty">${escapeHtml(emptyMsg)}</div>`;
         return;
       }
 
@@ -1245,23 +2092,28 @@
         const studentsHtml = g.students.map((s) => `
           <li class="student${s.isNew ? " is-new" : ""}">
             <div class="names">
-              <span class="name-zh">${escapeHtml(s.zh || "（無中文名）")}</span>
-              <span class="name-en">${escapeHtml(s.en || "（無英文名）")}</span>
+              <span class="name-zh">${escapeHtml(s.zh || t("noZhName"))}</span>
+              <span class="name-en">${escapeHtml(s.en || t("noEnName"))}</span>
             </div>
             <div class="facts">
-              <span class="fact">年級 ${escapeHtml(s.grade || "未填")}</span>
-              <span class="fact">生日 ${escapeHtml(s.dob || "未填")}</span>
+              <span class="fact">${escapeHtml(t("grade"))} ${escapeHtml(displayTitle(s.grade) || t("blank"))}</span>
+              <span class="fact">${escapeHtml(t("dob"))} ${escapeHtml(s.dob || t("blank"))}</span>
             </div>
+            ${renderGradeDetails(s)}
             ${renderExtraFields(s)}
           </li>
         `).join("");
 
+        const peopleText = uiLang === "en"
+          ? `${g.students.length} ${g.students.length === 1 ? "student" : "students"}`
+          : `${g.students.length} ${t("people")}`;
+
         return `
           <section class="group ${g.kind}" style="animation-delay:${Math.min(idx, 12) * 0.03}s">
             <div class="group-head">
-              <div class="group-kicker"><span class="dot ${g.kind}"></span>${escapeHtml(g.kicker)}</div>
-              <h2 class="group-title">${escapeHtml(g.title)}</h2>
-              <div class="group-count">${g.students.length} 人</div>
+              <div class="group-kicker"><span class="dot ${g.kind}"></span>${escapeHtml(groupKicker(g))}</div>
+              <h2 class="group-title">${escapeHtml(displayTitle(g.title))}</h2>
+              <div class="group-count">${peopleText}</div>
             </div>
             <ul class="students">${studentsHtml}</ul>
           </section>
@@ -1272,31 +2124,36 @@
     async function loadData() {
       const source = parseSheetSource(sheetUrlInput.value);
       if (!source) {
+        statusKind = "invalid";
         statusEl.classList.add("error");
-        statusEl.textContent = "請貼上有效的 Google 試算表網址（需含 /spreadsheets/d/…）。";
+        refreshStatusText();
         return;
       }
       currentSheetId = source.sheetId;
       currentGid = source.gid;
 
+      statusKind = "loading";
       statusEl.classList.remove("error");
-      statusEl.textContent = "正在從試算表載入…";
+      refreshStatusText();
       loadSheetBtn.disabled = true;
       try {
         const text = await fetchSheetCsvText(currentSheetId, currentGid);
         const rows = parseCsv(text);
         allStudents = buildStudents(rows);
-        statusEl.textContent = `已載入 ${allStudents.length} 筆報名資料`;
+        statusKind = "loaded";
+        refreshStatusText();
+        updateEnrichmentButtons();
+        updateGradeBar();
         renderDupNote();
         render();
       } catch (err) {
         console.error(err);
+        statusKind = "error";
         statusEl.classList.add("error");
-        statusEl.textContent =
-          "載入失敗：請確認試算表已設為「知道連結的任何人可檢視」。本機可執行 python3 server.py。";
+        refreshStatusText();
         dupNoteEl.classList.remove("show");
         dupNoteEl.innerHTML = "";
-        groupsEl.innerHTML = `<div class="empty">無法載入試算表資料</div>`;
+        groupsEl.innerHTML = `<div class="empty">${escapeHtml(t("loadFailEmpty"))}</div>`;
       } finally {
         loadSheetBtn.disabled = false;
       }
@@ -1332,16 +2189,24 @@
     closePrintBtn.addEventListener("click", closePrintPreview);
     function setClassMode(mode) {
       classMode = mode;
+      if (mode !== "enrichment") enrichmentFilter = "";
+      if (mode !== "grade") gradeFilter = "all";
       updateModeButtons();
       render();
     }
     modeChineseBtn.addEventListener("click", () => setClassMode("chinese"));
     modeEnglishBtn.addEventListener("click", () => setClassMode("english"));
     modeMathBtn.addEventListener("click", () => setClassMode("math"));
+    modeGradeBtn.addEventListener("click", () => setClassMode("grade"));
+    gradePrintBtn.addEventListener("click", openGradeSheetPreview);
+    langZhBtn.addEventListener("click", () => setUiLang("zh"));
+    langEnBtn.addEventListener("click", () => setUiLang("en"));
     updateModeButtons();
     updateSortButtons();
     updateShowFieldButtons();
-    groupsEl.innerHTML = `<div class="empty">請貼上試算表網址後按「載入試算表」</div>`;
+    updateLangButtons();
+    applyStaticUi();
+    groupsEl.innerHTML = `<div class="empty">${escapeHtml(t("emptyPrompt"))}</div>`;
   </script>
 </body>
 </html>
