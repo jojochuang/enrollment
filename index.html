@@ -935,7 +935,10 @@
         emptyPrompt: "請貼上試算表網址後按「載入試算表」",
         invalidUrl: "請貼上有效的 Google 試算表網址（需含 /spreadsheets/d/…）。",
         loading: "正在從試算表載入…",
-        loaded: (n) => `已載入 ${n} 筆報名資料`,
+        loaded: (raw, kept, removed) =>
+          removed > 0
+            ? `試算表 ${raw} 列資料 → 合併重複後 ${kept} 人（略過 ${removed} 筆）`
+            : `試算表 ${raw} 列資料，學生 ${kept} 人`,
         loadFail: "載入失敗：請確認試算表已設為「知道連結的任何人可檢視」。本機可執行 python3 server.py。",
         loadFailEmpty: "無法載入試算表資料",
         printNeedFields: "請先在「顯示資料」勾選至少一個欄位，再預覽列印。",
@@ -1010,7 +1013,10 @@
         emptyPrompt: 'Paste a sheet URL, then click "Load Sheet".',
         invalidUrl: "Please paste a valid Google Sheet URL (must include /spreadsheets/d/…).",
         loading: "Loading sheet…",
-        loaded: (n) => `Loaded ${n} enrollment records`,
+        loaded: (raw, kept, removed) =>
+          removed > 0
+            ? `Sheet ${raw} data row(s) → ${kept} student(s) after merging duplicates (skipped ${removed})`
+            : `Sheet ${raw} data row(s), ${kept} student(s)`,
         loadFail: 'Load failed. Make the sheet "Anyone with the link can view". Locally you can run python3 server.py.',
         loadFailEmpty: "Unable to load sheet data",
         printNeedFields: 'Select at least one field under "Show fields" before print preview.',
@@ -1217,8 +1223,12 @@
 
     function refreshStatusText() {
       if (statusKind === "loading") statusEl.textContent = t("loading");
-      else if (statusKind === "loaded") statusEl.textContent = t("loaded", allStudents.length);
-      else if (statusKind === "invalid") statusEl.textContent = t("invalidUrl");
+      else if (statusKind === "loaded") {
+        const raw = loadStats.raw || allStudents.length;
+        const kept = loadStats.kept || allStudents.length;
+        const removed = Math.max(0, raw - kept);
+        statusEl.textContent = t("loaded", raw, kept, removed);
+      } else if (statusKind === "invalid") statusEl.textContent = t("invalidUrl");
       else if (statusKind === "error") statusEl.textContent = t("loadFail");
       else statusEl.textContent = t("statusPrompt");
     }
@@ -1517,13 +1527,20 @@
       return scriptLabel(g.script, g.kind);
     }
 
+    function normalizeEnName(en) {
+      return String(en || "")
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function studentKey(s) {
-      // Same English + Chinese name = same person (DOB may be mistyped across resubmits).
-      const en = (s.en || "").toLowerCase();
-      const zh = s.zh || "";
-      if (!en && !zh) return "";
-      if (en && zh) return en + "|" + zh;
-      return en ? "en|" + en : "zh|" + zh;
+      // Prefer English name: resubmits often tweak Chinese spelling (楊/揚) or leave it blank.
+      const en = normalizeEnName(s.en);
+      const zh = (s.zh || "").trim();
+      if (en) return "en|" + en;
+      if (zh) return "zh|" + zh;
+      return "";
     }
 
     function displayName(s) {
@@ -1532,20 +1549,21 @@
     }
 
     function scoreStudent(s) {
-      // Prefer later rows and more complete class placement.
+      // Prefer later rows and more complete class placement / Chinese name.
       let score = s.rowIndex;
       if (s.chineseClass && s.chineseClass !== EMPTY.chineseClass) score += 10000;
       if (s.englishClass && s.englishClass !== EMPTY.englishClass) score += 3000;
       if (s.mathClass && s.mathClass !== EMPTY.mathClass) score += 3000;
       if (s.grade && s.grade !== EMPTY.grade) score += 500;
-      if (s.zh) score += 100;
+      if (s.zh && /[\u4e00-\u9fff]/.test(s.zh)) score += 200;
+      else if (s.zh) score += 100;
       if (s.en) score += 50;
       if (s.grade) score += 20;
       if (s.dob) score += 10;
       return score;
     }
 
-    function buildStudents(rows) {
+    function buildStudents(rows) {    function buildStudents(rows) {
       const raw = [];
       for (let i = 1; i < rows.length; i++) {
         const r = rows[i];
@@ -1609,6 +1627,18 @@
         const merged = Array.from(new Set([...(winner.enrichmentList || []), ...(loser.enrichmentList || [])]));
         winner.enrichmentList = merged;
         if (merged.length) winner.enrichment = merged.join(", ");
+        // Fill blanks from the other submission (e.g. Chinese name missing on one row).
+        ["zh", "en", "dob", "grade", "allergy", "medications", "parent1", "parent1Phone",
+          "parent2", "parent2Phone", "emergency", "emergencyPhone", "chineseClass", "script",
+          "englishClass", "mathClass", "studyHall"].forEach((field) => {
+          const wv = winner[field];
+          const lv = loser[field];
+          if (lv && (!wv || wv === EMPTY[field])) winner[field] = lv;
+        });
+        if (loser.zh && /[\u4e00-\u9fff]/.test(loser.zh) && !/[\u4e00-\u9fff]/.test(winner.zh || "")) {
+          winner.zh = loser.zh;
+        }
+        if (loser.isNew) winner.isNew = true;
         dupsByKey.get(key).push(loser);
         bestByKey.set(key, winner);
       }
