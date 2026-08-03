@@ -42,14 +42,24 @@ class EnrollmentHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write("缺少 sheet_id".encode("utf-8"))
             return
         try:
-            url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
-            req = urllib.request.Request(
-                url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; enrollment/1.0)"},
-            )
+            headers = {"User-Agent": "Mozilla/5.0 (compatible; enrollment/1.0)"}
             opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
-            with opener.open(req, timeout=20) as resp:
-                csv_data = resp.read().decode("utf-8-sig")
+            urls = [
+                f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}",
+                f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&gid={gid}",
+            ]
+            csv_data = None
+            last_err = None
+            for url in urls:
+                try:
+                    req = urllib.request.Request(url, headers=headers)
+                    with opener.open(req, timeout=20) as resp:
+                        csv_data = resp.read().decode("utf-8-sig")
+                    break
+                except Exception as e:
+                    last_err = e
+            if csv_data is None:
+                raise last_err or RuntimeError("unable to fetch sheet")
             self.send_response(200)
             self.send_header("Content-Type", "text/csv; charset=utf-8")
             self.end_headers()
