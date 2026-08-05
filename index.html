@@ -790,6 +790,8 @@
         <button class="btn" id="showParent1Btn" type="button" data-field="parent1">家長1+聯絡電話</button>
         <button class="btn" id="showParent2Btn" type="button" data-field="parent2">家長2+聯絡電話</button>
         <button class="btn" id="showEmergencyBtn" type="button" data-field="emergency">緊急聯絡人+聯絡電話</button>
+        <button class="btn" id="showNotesBtn" type="button" data-field="notes">希望學校知道的事項</button>
+        <button class="btn" id="showRemarksBtn" type="button" data-field="remarks">備註</button>
         <button class="btn primary" id="printPreviewBtn" type="button">預覽列印</button>
       </div>
       <div class="meta" id="metaBar"></div>
@@ -817,15 +819,15 @@
   </div>
 
   <script>
-    // C D E G J K L M O P Q T U V W X AA AB AC AD AF AG
+    // C D E G J K L M O P Q T U V W X Y AA AB AC AD AF AG AH
     const COL = {
       en: 2, zh: 3, dob: 4, grade: 6, enrolled: 9,
       parent1: 10, parent1Rel: 11, parent1Phone: 12,
       parent2: 14, parent2Rel: 15, parent2Phone: 16,
       emergency: 19, emergencyRel: 20, emergencyPhone: 21,
-      allergy: 22, medications: 23,
+      allergy: 22, medications: 23, notes: 24,
       chineseClass: 26, script: 27, englishClass: 28, mathClass: 29,
-      enrichment: 31, studyHall: 32,
+      enrichment: 31, studyHall: 32, remarks: 33,
     };
 
     const groupsEl = document.getElementById("groups");
@@ -842,6 +844,8 @@
       parent1: document.getElementById("showParent1Btn"),
       parent2: document.getElementById("showParent2Btn"),
       emergency: document.getElementById("showEmergencyBtn"),
+      notes: document.getElementById("showNotesBtn"),
+      remarks: document.getElementById("showRemarksBtn"),
     };
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const printOverlay = document.getElementById("printOverlay");
@@ -899,6 +903,8 @@
         fieldParent1: "家長1+聯絡電話",
         fieldParent2: "家長2+聯絡電話",
         fieldEmergency: "緊急聯絡人+聯絡電話",
+        fieldNotes: "希望學校知道的事項",
+        fieldRemarks: "備註",
         printPreview: "預覽列印",
         statusPrompt: "請貼上試算表網址後按「載入試算表」",
         legendTrad: "繁體字組",
@@ -919,6 +925,8 @@
         parent1: "家長1",
         parent2: "家長2",
         emergency: "緊急聯絡",
+        notes: "希望學校知道的事項",
+        remarks: "備註",
         noZhName: "（無中文名）",
         noEnName: "（無英文名）",
         unnamed: "（無名）",
@@ -977,6 +985,8 @@
         fieldParent1: "Parent 1 + phone",
         fieldParent2: "Parent 2 + phone",
         fieldEmergency: "Emergency contact + phone",
+        fieldNotes: "Notes for school",
+        fieldRemarks: "Remarks",
         printPreview: "Print preview",
         statusPrompt: 'Paste a sheet URL, then click "Load Sheet".',
         legendTrad: "Traditional",
@@ -997,6 +1007,8 @@
         parent1: "Parent 1",
         parent2: "Parent 2",
         emergency: "Emergency",
+        notes: "Notes for school",
+        remarks: "Remarks",
         noZhName: "(No Chinese name)",
         noEnName: "(No English name)",
         unnamed: "(No name)",
@@ -1044,6 +1056,8 @@
       parent1: false,
       parent2: false,
       emergency: false,
+      notes: false,
+      remarks: false,
     };
 
     function t(key, ...args) {
@@ -1058,6 +1072,8 @@
       if (key === "parent1") return t("fieldParent1");
       if (key === "parent2") return t("fieldParent2");
       if (key === "emergency") return t("fieldEmergency");
+      if (key === "notes") return t("fieldNotes");
+      if (key === "remarks") return t("fieldRemarks");
       return key;
     }
 
@@ -1207,6 +1223,8 @@
       showFieldBtns.parent1.textContent = t("fieldParent1");
       showFieldBtns.parent2.textContent = t("fieldParent2");
       showFieldBtns.emergency.textContent = t("fieldEmergency");
+      showFieldBtns.notes.textContent = t("fieldNotes");
+      showFieldBtns.remarks.textContent = t("fieldRemarks");
       printPreviewBtn.textContent = t("printPreview");
       document.getElementById("legendTrad").innerHTML =
         `<span class="dot trad"></span>${escapeHtml(t("legendTrad"))}`;
@@ -1684,6 +1702,7 @@
           isNew: /^No\b/i.test(enrolled),
           allergy: cell(r, COL.allergy),
           medications: cell(r, COL.medications),
+          notes: cell(r, COL.notes),
           parent1: cell(r, COL.parent1),
           parent1Rel: cell(r, COL.parent1Rel),
           parent1Phone: cell(r, COL.parent1Phone),
@@ -1700,6 +1719,7 @@
           enrichmentList,
           enrichment: enrichmentList.join(", "),
           studyHall: cell(r, COL.studyHall),
+          remarks: cell(r, COL.remarks),
           kind: scriptKind(script),
           rowIndex: i + 1,
         });
@@ -1725,9 +1745,9 @@
         winner.enrichmentList = merged;
         if (merged.length) winner.enrichment = merged.join(", ");
         // Fill blanks from the other submission (e.g. Chinese name missing on one row).
-        ["zh", "en", "dob", "grade", "allergy", "medications", "parent1", "parent1Phone",
+        ["zh", "en", "dob", "grade", "allergy", "medications", "notes", "parent1", "parent1Phone",
           "parent2", "parent2Phone", "emergency", "emergencyPhone", "chineseClass", "script",
-          "englishClass", "mathClass", "studyHall"].forEach((field) => {
+          "englishClass", "mathClass", "studyHall", "remarks"].forEach((field) => {
           const wv = winner[field];
           const lv = loser[field];
           if (lv && (!wv || wv === EMPTY[field])) winner[field] = lv;
@@ -2087,6 +2107,14 @@
       if (showFields.emergency) {
         const value = joinContact(s.emergency, s.emergencyPhone, s.emergencyRel);
         if (value) rows.push({ label: t("emergency"), value });
+      }
+      if (showFields.notes) {
+        const value = cleanPart(s.notes);
+        if (value) rows.push({ label: t("notes"), value });
+      }
+      if (showFields.remarks) {
+        const value = cleanPart(s.remarks);
+        if (value) rows.push({ label: t("remarks"), value });
       }
       return rows;
     }
