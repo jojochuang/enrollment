@@ -640,6 +640,25 @@
       gap: 10px;
     }
 
+    /* 僅列印出席：橫排四人 */
+    .print-grid.attendance-print {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .print-grid.attendance-print .print-cell {
+      min-height: 0;
+      padding: 8px;
+    }
+
+    .print-grid.attendance-print .extra-row {
+      grid-template-columns: 2.8em minmax(0, 1fr);
+    }
+
+    .print-grid.attendance-print .extra-value.attendance-grid {
+      font-size: 0.72rem;
+      line-height: 1.45;
+    }
+
     .print-cell {
       border: 1px solid #cbd5d1;
       border-radius: 8px;
@@ -675,6 +694,7 @@
       .wrap { padding: 18px 14px 48px; }
       .groups { grid-template-columns: 1fr; }
       .print-grid { grid-template-columns: 1fr; }
+      .print-grid.attendance-print { grid-template-columns: repeat(4, 1fr); }
     }
 
     @media print {
@@ -727,6 +747,11 @@
       .print-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
+      }
+
+      .print-grid.attendance-print {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
       }
 
       .print-cell {
@@ -1092,12 +1117,15 @@
       return key;
     }
 
-    /** 出席格：1–31 分兩列，數字之間全形空格（不連試算表） */
+    /** 出席格：1–31，每列 7 個，數字之間全形空格（不連試算表） */
     function attendanceGridText() {
       const fw = "\u3000";
-      const row1 = Array.from({ length: 16 }, (_, i) => String(i + 1)).join(fw);
-      const row2 = Array.from({ length: 15 }, (_, i) => String(i + 17)).join(fw);
-      return row1 + "\n" + row2;
+      const nums = Array.from({ length: 31 }, (_, i) => String(i + 1));
+      const rows = [];
+      for (let i = 0; i < nums.length; i += 7) {
+        rows.push(nums.slice(i, i + 7).join(fw));
+      }
+      return rows.join("\n");
     }
 
     function modeLabel(mode) {
@@ -2177,6 +2205,8 @@
     }
 
     function buildPrintPagesHtml(groups) {
+      const keys = selectedShowKeys();
+      const attendanceOnly = keys.length === 1 && keys[0] === "attendance";
       return groups.map((g) => {
         const cells = g.students.map((s) => {
           const rows = getSelectedFieldRows(s);
@@ -2191,7 +2221,7 @@
           return `
             <div class="print-cell${s.isNew ? " is-new" : ""}">
               <div class="names">
-                <span class="name-zh">${escapeHtml(s.zh || t("noZhName"))}</span>
+                <span class="name-zh">${escapeHtml(s.zh || "")}</span>
                 <span class="name-en">${escapeHtml(s.en || t("noEnName"))}</span>
               </div>
               ${fieldsHtml}
@@ -2208,7 +2238,7 @@
               <h2 class="print-page-title">${escapeHtml(groupKicker(g))}｜${escapeHtml(displayTitle(g.title))}</h2>
               <div class="print-page-meta">${peopleText}</div>
             </div>
-            <div class="print-grid">${cells}</div>
+            <div class="print-grid${attendanceOnly ? " attendance-print" : ""}">${cells}</div>
           </section>
         `;
       }).join("");
@@ -2287,7 +2317,7 @@
         const studentsHtml = g.students.map((s) => `
           <li class="student${s.isNew ? " is-new" : ""}">
             <div class="names">
-              <span class="name-zh">${escapeHtml(s.zh || t("noZhName"))}</span>
+              <span class="name-zh">${escapeHtml(s.zh || "")}</span>
               <span class="name-en">${escapeHtml(s.en || t("noEnName"))}</span>
             </div>
             <div class="facts">
