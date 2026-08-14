@@ -475,6 +475,13 @@
       font-weight: 600;
     }
 
+    .extra-value.attendance-grid {
+      white-space: pre-line;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0;
+      line-height: 1.55;
+    }
+
     .empty {
       padding: 48px 20px;
       text-align: center;
@@ -792,6 +799,7 @@
         <button class="btn" id="showEmergencyBtn" type="button" data-field="emergency">緊急聯絡人+聯絡電話</button>
         <button class="btn" id="showNotesBtn" type="button" data-field="notes">希望學校知道的事項</button>
         <button class="btn" id="showRemarksBtn" type="button" data-field="remarks">備註</button>
+        <button class="btn" id="showAttendanceBtn" type="button" data-field="attendance">出席</button>
         <button class="btn primary" id="printPreviewBtn" type="button">預覽列印</button>
       </div>
       <div class="meta" id="metaBar"></div>
@@ -846,6 +854,7 @@
       emergency: document.getElementById("showEmergencyBtn"),
       notes: document.getElementById("showNotesBtn"),
       remarks: document.getElementById("showRemarksBtn"),
+      attendance: document.getElementById("showAttendanceBtn"),
     };
     const printPreviewBtn = document.getElementById("printPreviewBtn");
     const printOverlay = document.getElementById("printOverlay");
@@ -905,6 +914,8 @@
         fieldEmergency: "緊急聯絡人+聯絡電話",
         fieldNotes: "希望學校知道的事項",
         fieldRemarks: "備註",
+        fieldAttendance: "出席",
+        attendance: "出席",
         printPreview: "預覽列印",
         statusPrompt: "請貼上試算表網址後按「載入試算表」",
         legendTrad: "繁體字組",
@@ -987,6 +998,8 @@
         fieldEmergency: "Emergency contact + phone",
         fieldNotes: "Notes for school",
         fieldRemarks: "Remarks",
+        fieldAttendance: "Attendance",
+        attendance: "Attendance",
         printPreview: "Print preview",
         statusPrompt: 'Paste a sheet URL, then click "Load Sheet".',
         legendTrad: "Traditional",
@@ -1058,6 +1071,7 @@
       emergency: false,
       notes: false,
       remarks: false,
+      attendance: false,
     };
 
     function t(key, ...args) {
@@ -1074,7 +1088,16 @@
       if (key === "emergency") return t("fieldEmergency");
       if (key === "notes") return t("fieldNotes");
       if (key === "remarks") return t("fieldRemarks");
+      if (key === "attendance") return t("fieldAttendance");
       return key;
+    }
+
+    /** 出席格：1–31 分兩列，數字之間全形空格（不連試算表） */
+    function attendanceGridText() {
+      const fw = "\u3000";
+      const row1 = Array.from({ length: 16 }, (_, i) => String(i + 1)).join(fw);
+      const row2 = Array.from({ length: 15 }, (_, i) => String(i + 17)).join(fw);
+      return row1 + "\n" + row2;
     }
 
     function modeLabel(mode) {
@@ -1225,6 +1248,7 @@
       showFieldBtns.emergency.textContent = t("fieldEmergency");
       showFieldBtns.notes.textContent = t("fieldNotes");
       showFieldBtns.remarks.textContent = t("fieldRemarks");
+      if (showFieldBtns.attendance) showFieldBtns.attendance.textContent = t("fieldAttendance");
       printPreviewBtn.textContent = t("printPreview");
       document.getElementById("legendTrad").innerHTML =
         `<span class="dot trad"></span>${escapeHtml(t("legendTrad"))}`;
@@ -2116,7 +2140,23 @@
         const value = cleanPart(s.remarks);
         if (value) rows.push({ label: t("remarks"), value });
       }
+      if (showFields.attendance) {
+        rows.push({
+          label: t("attendance"),
+          value: attendanceGridText(),
+          attendance: true,
+        });
+      }
       return rows;
+    }
+
+    function renderExtraValueHtml(row) {
+      const cls =
+        "extra-value" +
+        (row.alert ? " allergy-alert" : "") +
+        (row.attendance ? " attendance-grid" : "");
+      const html = escapeHtml(row.value).replace(/\n/g, "<br>");
+      return `<span class="${cls}">${html}</span>`;
     }
 
     function renderExtraFields(s) {
@@ -2125,7 +2165,7 @@
       return `<div class="extra-fields">${rows.map((row) => `
         <div class="extra-row">
           <span class="extra-label">${escapeHtml(row.label)}</span>
-          <span class="extra-value${row.alert ? " allergy-alert" : ""}">${escapeHtml(row.value)}</span>
+          ${renderExtraValueHtml(row)}
         </div>
       `).join("")}</div>`;
     }
@@ -2144,7 +2184,7 @@
             ? `<div class="extra-fields">${rows.map((row) => `
                 <div class="extra-row">
                   <span class="extra-label">${escapeHtml(row.label)}</span>
-                  <span class="extra-value${row.alert ? " allergy-alert" : ""}">${escapeHtml(row.value)}</span>
+                  ${renderExtraValueHtml(row)}
                 </div>
               `).join("")}</div>`
             : "";
