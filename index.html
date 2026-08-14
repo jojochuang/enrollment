@@ -476,10 +476,21 @@
     }
 
     .extra-value.attendance-grid {
-      white-space: pre-line;
+      display: grid;
+      grid-template-columns: repeat(7, 2ch);
+      column-gap: 0.55em;
+      row-gap: 0.12em;
+      justify-content: start;
+      align-content: start;
       font-variant-numeric: tabular-nums;
-      letter-spacing: 0;
-      line-height: 1.55;
+      line-height: 1.45;
+      white-space: normal;
+    }
+
+    .extra-value.attendance-grid .att-day {
+      width: 2ch;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
     }
 
     .empty {
@@ -1117,15 +1128,11 @@
       return key;
     }
 
-    /** 出席格：1–31，每列 7 個，數字之間全形空格（不連試算表） */
-    function attendanceGridText() {
-      const fw = "\u3000";
-      const nums = Array.from({ length: 31 }, (_, i) => String(i + 1));
-      const rows = [];
-      for (let i = 0; i < nums.length; i += 7) {
-        rows.push(nums.slice(i, i + 7).join(fw));
-      }
-      return rows.join("\n");
+    /** 出席格：1–31，每列 7 格對齊（月曆式，不連試算表） */
+    function attendanceGridHtml() {
+      return Array.from({ length: 31 }, (_, i) =>
+        `<span class="att-day">${i + 1}</span>`
+      ).join("");
     }
 
     function modeLabel(mode) {
@@ -2171,7 +2178,6 @@
       if (showFields.attendance) {
         rows.push({
           label: t("attendance"),
-          value: attendanceGridText(),
           attendance: true,
         });
       }
@@ -2179,12 +2185,11 @@
     }
 
     function renderExtraValueHtml(row) {
-      const cls =
-        "extra-value" +
-        (row.alert ? " allergy-alert" : "") +
-        (row.attendance ? " attendance-grid" : "");
-      const html = escapeHtml(row.value).replace(/\n/g, "<br>");
-      return `<span class="${cls}">${html}</span>`;
+      if (row.attendance) {
+        return `<span class="extra-value attendance-grid">${attendanceGridHtml()}</span>`;
+      }
+      const cls = "extra-value" + (row.alert ? " allergy-alert" : "");
+      return `<span class="${cls}">${escapeHtml(row.value)}</span>`;
     }
 
     function renderExtraFields(s) {
