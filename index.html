@@ -500,6 +500,12 @@
       visibility: hidden;
     }
 
+    /* 週六、週日兩欄不顯示日期 */
+    .extra-value.attendance-grid .att-day:nth-child(7n+6),
+    .extra-value.attendance-grid .att-day:nth-child(7n) {
+      visibility: hidden;
+    }
+
     .attendance-bar {
       display: none;
       flex-wrap: wrap;
