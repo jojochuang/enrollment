@@ -479,21 +479,24 @@
       display: grid;
       grid-template-columns: repeat(7, 2ch);
       column-gap: 0.55em;
-      row-gap: 0.12em;
+      row-gap: 0;
       justify-content: start;
       align-content: start;
+      align-items: center;
       font-variant-numeric: tabular-nums;
-      line-height: 1.45;
+      line-height: 1.25;
       white-space: normal;
     }
 
     .extra-value.attendance-grid .att-day {
       width: 2ch;
+      height: 1.25em;
+      line-height: 1.25;
       text-align: center;
       font-variant-numeric: tabular-nums;
     }
 
-    .extra-value.attendance-grid .att-day.empty {
+    .extra-value.attendance-grid .att-day.att-pad {
       visibility: hidden;
     }
 
@@ -695,23 +698,30 @@
       gap: 10px;
     }
 
-    /* 僅列印出席：橫排四人 */
+    /* 僅列印出席：橫排四人，格子貼齊內容高度 */
     .print-grid.attendance-print {
       grid-template-columns: repeat(4, 1fr);
+      align-items: start;
     }
 
     .print-grid.attendance-print .print-cell {
       min-height: 0;
-      padding: 8px;
+      height: auto;
+      padding: 6px 8px;
     }
 
     .print-grid.attendance-print .extra-row {
       display: block;
     }
 
+    .print-grid.attendance-print .print-cell .extra-fields {
+      margin-top: 2px;
+    }
+
     .print-grid.attendance-print .extra-value.attendance-grid {
       font-size: 0.72rem;
-      line-height: 1.45;
+      line-height: 1.2;
+      row-gap: 0;
     }
 
     .print-extra-row.no-label {
@@ -811,6 +821,12 @@
       .print-grid.attendance-print {
         grid-template-columns: repeat(4, 1fr);
         gap: 6px;
+        align-items: start;
+      }
+
+      .print-grid.attendance-print .print-cell {
+        min-height: 0;
+        height: auto;
       }
 
       .print-cell {
@@ -1198,13 +1214,13 @@
       const start = (new Date(y, m - 1, 1).getDay() + 6) % 7;
       const cells = [];
       for (let i = 0; i < start; i++) {
-        cells.push('<span class="att-day empty" aria-hidden="true"></span>');
+        cells.push('<span class="att-day att-pad" aria-hidden="true">0</span>');
       }
       for (let d = 1; d <= dim; d++) {
         cells.push(`<span class="att-day">${d}</span>`);
       }
       while (cells.length % 7 !== 0) {
-        cells.push('<span class="att-day empty" aria-hidden="true"></span>');
+        cells.push('<span class="att-day att-pad" aria-hidden="true">0</span>');
       }
       return cells.join("");
     }
