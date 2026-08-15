@@ -674,6 +674,21 @@
       font-size: 0.86rem;
     }
 
+    .print-page-head-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 10px 16px;
+      min-width: 0;
+    }
+
+    .print-attendance-month {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
     .print-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -691,12 +706,16 @@
     }
 
     .print-grid.attendance-print .extra-row {
-      grid-template-columns: 4.2em minmax(0, 1fr);
+      display: block;
     }
 
     .print-grid.attendance-print .extra-value.attendance-grid {
       font-size: 0.72rem;
       line-height: 1.45;
+    }
+
+    .print-extra-row.no-label {
+      display: block;
     }
 
     .print-cell {
@@ -2257,13 +2276,17 @@
       }
       if (showFields.attendance) {
         rows.push({
-          label: uiLang === "en"
-            ? `${t("attendance")} ${attendanceYear}/${attendanceMonth}`
-            : `${t("attendance")} ${attendanceYear}年${attendanceMonth}月`,
+          label: attendanceMonthLabelText(),
           attendance: true,
         });
       }
       return rows;
+    }
+
+    function attendanceMonthLabelText() {
+      return uiLang === "en"
+        ? `${t("attendance")} ${attendanceYear}/${attendanceMonth}`
+        : `${t("attendance")} ${attendanceYear}年${attendanceMonth}月`;
     }
 
     function renderExtraValueHtml(row) {
@@ -2294,16 +2317,21 @@
     function buildPrintPagesHtml(groups) {
       const keys = selectedShowKeys();
       const attendanceOnly = keys.length === 1 && keys[0] === "attendance";
+      const attendanceHead = showFields.attendance ? attendanceMonthLabelText() : "";
       return groups.map((g) => {
         const cells = g.students.map((s) => {
           const rows = getSelectedFieldRows(s);
           const fieldsHtml = rows.length
-            ? `<div class="extra-fields">${rows.map((row) => `
+            ? `<div class="extra-fields">${rows.map((row) => {
+                if (row.attendance) {
+                  return `<div class="extra-row print-extra-row no-label">${renderExtraValueHtml(row)}</div>`;
+                }
+                return `
                 <div class="extra-row">
                   <span class="extra-label">${escapeHtml(row.label)}</span>
                   ${renderExtraValueHtml(row)}
-                </div>
-              `).join("")}</div>`
+                </div>`;
+              }).join("")}</div>`
             : "";
           return `
             <div class="print-cell${s.isNew ? " is-new" : ""}">
@@ -2322,7 +2350,10 @@
         return `
           <section class="print-page">
             <div class="print-page-head">
-              <h2 class="print-page-title">${escapeHtml(groupKicker(g))}｜${escapeHtml(displayTitle(g.title))}</h2>
+              <div class="print-page-head-left">
+                <h2 class="print-page-title">${escapeHtml(groupKicker(g))}｜${escapeHtml(displayTitle(g.title))}</h2>
+                ${attendanceHead ? `<span class="print-attendance-month">${escapeHtml(attendanceHead)}</span>` : ""}
+              </div>
               <div class="print-page-meta">${peopleText}</div>
             </div>
             <div class="print-grid${attendanceOnly ? " attendance-print" : ""}">${cells}</div>
