@@ -493,6 +493,35 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .extra-value.attendance-grid .att-day.empty {
+      visibility: hidden;
+    }
+
+    .attendance-bar {
+      display: none;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .attendance-bar.open {
+      display: flex;
+    }
+
+    .attendance-bar .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .attendance-bar select {
+      font: inherit;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      color: var(--ink);
+    }
+
     .empty {
       padding: 48px 20px;
       text-align: center;
@@ -662,7 +691,7 @@
     }
 
     .print-grid.attendance-print .extra-row {
-      grid-template-columns: 2.8em minmax(0, 1fr);
+      grid-template-columns: 4.2em minmax(0, 1fr);
     }
 
     .print-grid.attendance-print .extra-value.attendance-grid {
@@ -838,6 +867,11 @@
         <button class="btn" id="showAttendanceBtn" type="button" data-field="attendance">出席</button>
         <button class="btn primary" id="printPreviewBtn" type="button">預覽列印</button>
       </div>
+      <div class="attendance-bar" id="attendanceBar" aria-hidden="true">
+        <span class="label" id="attendanceMonthLabel">出席月份：</span>
+        <select id="attendanceYearSelect" aria-label="Year"></select>
+        <select id="attendanceMonthSelect" aria-label="Month"></select>
+      </div>
       <div class="meta" id="metaBar"></div>
       <div class="status" id="status">請貼上試算表網址後按「載入試算表」</div>
       <div class="dup-note" id="dupNote"></div>
@@ -893,6 +927,9 @@
       attendance: document.getElementById("showAttendanceBtn"),
     };
     const printPreviewBtn = document.getElementById("printPreviewBtn");
+    const attendanceBar = document.getElementById("attendanceBar");
+    const attendanceYearSelect = document.getElementById("attendanceYearSelect");
+    const attendanceMonthSelect = document.getElementById("attendanceMonthSelect");
     const printOverlay = document.getElementById("printOverlay");
     const printSheet = document.getElementById("printSheet");
     const printHint = document.getElementById("printHint");
@@ -952,6 +989,7 @@
         fieldRemarks: "備註",
         fieldAttendance: "出席",
         attendance: "出席",
+        attendanceMonthLabel: "出席月份：",
         printPreview: "預覽列印",
         statusPrompt: "請貼上試算表網址後按「載入試算表」",
         legendTrad: "繁體字組",
@@ -1036,6 +1074,7 @@
         fieldRemarks: "Remarks",
         fieldAttendance: "Attendance",
         attendance: "Attendance",
+        attendanceMonthLabel: "Attendance month:",
         printPreview: "Print preview",
         statusPrompt: 'Paste a sheet URL, then click "Load Sheet".',
         legendTrad: "Traditional",
@@ -1109,6 +1148,9 @@
       remarks: false,
       attendance: false,
     };
+    const _nowAtt = new Date();
+    let attendanceYear = _nowAtt.getFullYear();
+    let attendanceMonth = _nowAtt.getMonth() + 1; // 1–12
 
     function t(key, ...args) {
       const pack = I18N[uiLang] || I18N.zh;
@@ -1128,11 +1170,46 @@
       return key;
     }
 
-    /** 出席格：1–31，每列 7 格對齊（月曆式，不連試算表） */
+    /** 出席月曆：週一在左、週末在右；僅日期，無星期標題 */
     function attendanceGridHtml() {
-      return Array.from({ length: 31 }, (_, i) =>
-        `<span class="att-day">${i + 1}</span>`
-      ).join("");
+      const y = attendanceYear;
+      const m = attendanceMonth;
+      const dim = new Date(y, m, 0).getDate();
+      // JS: 0=Sun…6=Sat → Monday-first offset 0–6
+      const start = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+      const cells = [];
+      for (let i = 0; i < start; i++) {
+        cells.push('<span class="att-day empty" aria-hidden="true"></span>');
+      }
+      for (let d = 1; d <= dim; d++) {
+        cells.push(`<span class="att-day">${d}</span>`);
+      }
+      while (cells.length % 7 !== 0) {
+        cells.push('<span class="att-day empty" aria-hidden="true"></span>');
+      }
+      return cells.join("");
+    }
+
+    function fillAttendanceMonthSelects() {
+      const yNow = new Date().getFullYear();
+      const years = [];
+      for (let y = yNow - 3; y <= yNow + 2; y++) years.push(y);
+      if (!years.includes(attendanceYear)) years.push(attendanceYear);
+      years.sort((a, b) => a - b);
+      attendanceYearSelect.innerHTML = years
+        .map((y) => `<option value="${y}"${y === attendanceYear ? " selected" : ""}>${y}</option>`)
+        .join("");
+      attendanceMonthSelect.innerHTML = Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1;
+        const label = uiLang === "en" ? String(m) : `${m}月`;
+        return `<option value="${m}"${m === attendanceMonth ? " selected" : ""}>${label}</option>`;
+      }).join("");
+    }
+
+    function updateAttendanceBar() {
+      const on = !!showFields.attendance;
+      attendanceBar.classList.toggle("open", on);
+      attendanceBar.setAttribute("aria-hidden", on ? "false" : "true");
     }
 
     function modeLabel(mode) {
@@ -1284,6 +1361,8 @@
       showFieldBtns.notes.textContent = t("fieldNotes");
       showFieldBtns.remarks.textContent = t("fieldRemarks");
       if (showFieldBtns.attendance) showFieldBtns.attendance.textContent = t("fieldAttendance");
+      document.getElementById("attendanceMonthLabel").textContent = t("attendanceMonthLabel");
+      fillAttendanceMonthSelects();
       printPreviewBtn.textContent = t("printPreview");
       document.getElementById("legendTrad").innerHTML =
         `<span class="dot trad"></span>${escapeHtml(t("legendTrad"))}`;
@@ -2121,6 +2200,7 @@
       Object.keys(showFieldBtns).forEach((key) => {
         showFieldBtns[key].classList.toggle("active", !!showFields[key]);
       });
+      updateAttendanceBar();
     }
 
     function isEmptyValue(value) {
@@ -2177,7 +2257,9 @@
       }
       if (showFields.attendance) {
         rows.push({
-          label: t("attendance"),
+          label: uiLang === "en"
+            ? `${t("attendance")} ${attendanceYear}/${attendanceMonth}`
+            : `${t("attendance")} ${attendanceYear}年${attendanceMonth}月`,
           attendance: true,
         });
       }
@@ -2414,6 +2496,14 @@
         render();
       });
     });
+    attendanceYearSelect.addEventListener("change", () => {
+      attendanceYear = Number(attendanceYearSelect.value) || attendanceYear;
+      render();
+    });
+    attendanceMonthSelect.addEventListener("change", () => {
+      attendanceMonth = Number(attendanceMonthSelect.value) || attendanceMonth;
+      render();
+    });
     printPreviewBtn.addEventListener("click", openPrintPreview);
     doPrintBtn.addEventListener("click", () => window.print());
     closePrintBtn.addEventListener("click", closePrintPreview);
@@ -2435,6 +2525,7 @@
     updateSortButtons();
     updateShowFieldButtons();
     updateLangButtons();
+    fillAttendanceMonthSelects();
     applyStaticUi();
     groupsEl.innerHTML = `<div class="empty">${escapeHtml(t("emptyPrompt"))}</div>`;
   </script>
